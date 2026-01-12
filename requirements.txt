@@ -34,4 +34,5 @@ PySocks
 
 # === MUSIC PLAYER ===
 # YouTube Audio Extraction (from cannatoshi fork)
-git+https://github.com/cannatoshi/yt-dlp.gitdocker>=7.0.0
+git+https://github.com/cannatoshi/yt-dlp.git
+docker>=7.0.0
