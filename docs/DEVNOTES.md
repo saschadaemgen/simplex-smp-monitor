@@ -16,6 +16,7 @@
 7. [Known Issues & Solutions](#7-known-issues--solutions)
 8. [Verification Tests](#8-verification-tests)
 9. [Implementation Changelog](#9-implementation-changelog)
+10. [Docker Manager Module](#10-docker-manager-module)
 
 ---
 
@@ -153,20 +154,20 @@ if connection_mode == 'chutnex_internal':
 ### Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    DJANGO APP                           │
-│                                                         │
-│   SimplexCommandService                                 │
-│   └── websocket_url property                            │
-│       ├── Development: ws://localhost:{port}            │
-│       └── Docker:      ws://simplex-client-{slug}:{port}│
-│                                                         │
-│   SimplexEventBridge (Auto-start)                       │
-│   └── Connects to ALL running client containers         │
-│   └── Processes: newChatItems, chatItemsStatusesUpdated │
-│   └── Broadcasts to browsers via Redis Channel Layer    │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    DJANGO APP                               │
+│                                                             │
+│   SimplexCommandService                                     │
+│   └── websocket_url property                                │
+│       ├── Development: ws://localhost:{port}                │
+│       └── Docker:      ws://simplex-client-{slug}:{port}    │
+│                                                             │
+│   SimplexEventBridge (Auto-start)                           │
+│   └── Connects to ALL running client containers             │
+│   └── Processes: newChatItems, chatItemsStatusesUpdated     │
+│   └── Broadcasts to browsers via Redis Channel Layer        │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
          │                              │
          │ WebSocket                    │ Redis Pub/Sub
          ▼                              ▼
@@ -485,6 +486,211 @@ docker exec simplex-monitor-redis redis-cli ping
 
 ---
 
+## 10. Docker Manager Module
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     FRONTEND (React)                        │
+│                                                             │
+│   Docker.tsx                                                │
+│   ├── Table/Card Views                                      │
+│   ├── Real-time Stats Display                               │
+│   ├── Tor/ChutneX Detection (isTorContainer)                │
+│   └── Bulk Operations UI                                    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │ REST API (5s stats / 15s list)
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     BACKEND (Django)                        │
+│                                                             │
+│   docker_manager/                                           │
+│   ├── api/views.py          # DRF ViewSets                  │
+│   ├── api/urls.py           # API routes                    │
+│   └── services/             #                               │
+│       └── docker_service.py # Docker SDK wrapper            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │ Docker SDK (socket)
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   DOCKER DAEMON                             │
+│                                                             │
+│   /var/run/docker.sock                                      │
+│   └── All containers on host                                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `docker_manager/services/docker_service.py` | Docker SDK operations with ThreadPoolExecutor |
+| `docker_manager/api/views.py` | REST API endpoints |
+| `docker_manager/api/urls.py` | URL routing |
+| `frontend/src/pages/Docker.tsx` | React component (900+ lines) |
+| `frontend/src/api/docker.ts` | TypeScript API client |
+
+### Critical Implementation: Non-Blocking Stats
+
+**Problem (v0.1.14):** Docker SDK `container.stats(stream=True)` blocks the entire Django process, causing all requests to hang for 20-30 seconds.
+
+**Solution (v0.1.12-alpha):** Two-sample approach with immediate stream close:
+
+```python
+# docker_manager/services/docker_service.py
+
+def get_container_stats(self, container_id: str) -> dict:
+    container = self.client.containers.get(container_id)
+    stats_stream = container.stats(stream=True, decode=True)
+    
+    # Read exactly 2 samples for delta calculation
+    first_sample = next(stats_stream)
+    time.sleep(0.1)  # 100ms between samples
+    second_sample = next(stats_stream)
+    
+    # CRITICAL: Close stream immediately
+    stats_stream.close()
+    
+    # Calculate CPU from deltas
+    cpu_delta = second_sample['cpu_stats']['cpu_usage']['total_usage'] - \
+                first_sample['cpu_stats']['cpu_usage']['total_usage']
+    system_delta = second_sample['cpu_stats']['system_cpu_usage'] - \
+                   first_sample['cpu_stats']['system_cpu_usage']
+    
+    cpu_percent = (cpu_delta / system_delta) * num_cpus * 100
+    
+    return {...}
+```
+
+**Why 2 samples?** Docker stats with `stream=False` returns a single snapshot with zero deltas. CPU calculation requires the difference between two measurements.
+
+### Critical Implementation: Parallel Stats Collection
+
+**Problem:** Fetching stats for 20 containers sequentially = 20 × 200ms = 4 seconds blocking.
+
+**Solution:** ThreadPoolExecutor for parallel collection:
+
+```python
+def get_all_stats(self) -> list:
+    running = [c for c in self.client.containers.list() if c.status == 'running']
+    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {
+            executor.submit(self._get_single_stats, c.id): c.id 
+            for c in running
+        }
+        
+        results = []
+        for future in as_completed(futures, timeout=5):
+            try:
+                results.append(future.result())
+            except Exception:
+                pass
+                
+    return results
+```
+
+### Tor/ChutneX Container Detection
+
+**Frontend logic in `Docker.tsx`:**
+
+```typescript
+function isTorContainer(container: {
+  name: string;
+  networks?: Record<string, any>;
+  image?: string;
+}): boolean {
+  const name = container.name.toLowerCase();
+  const image = (container.image || '').toLowerCase();
+  const networks = Object.keys(container.networks || {}).map(n => n.toLowerCase());
+  
+  // Check name, image, or network for tor/chutnex keywords
+  const keywords = ['tor', 'chutnex', 'chutney'];
+  
+  return keywords.some(kw => 
+    name.includes(kw) || 
+    image.includes(kw) || 
+    networks.some(n => n.includes(kw))
+  );
+}
+```
+
+**Visual differentiation:**
+- Status dots: Purple (`#7D4698`) vs Cyan (`#4A9BA0`)
+- 🧅 emoji badge on container name
+- Network badges in purple in expanded details
+
+### API Endpoints Reference
+
+```
+GET  /api/docker/info/                    → Docker host info
+GET  /api/docker/containers/              → List containers
+GET  /api/docker/containers/?all=true     → Include stopped
+POST /api/docker/containers/{id}/action/  → {action: "start|stop|restart|pause|unpause"}
+DELETE /api/docker/containers/{id}/       → Remove container
+DELETE /api/docker/containers/{id}/?force=true → Force remove
+GET  /api/docker/containers/{id}/stats/   → Single container stats
+GET  /api/docker/containers/{id}/logs/    → Container logs
+GET  /api/docker/containers/{id}/logs/?lines=500 → Custom line count
+GET  /api/docker/stats/all/               → All running containers stats
+POST /api/docker/bulk/                    → {container_ids: [...], action: "..."}
+POST /api/docker/prune/                   → System prune
+```
+
+### Frontend Polling Strategy
+
+```typescript
+// Stats: 5 second interval (CPU/Memory change frequently)
+useEffect(() => {
+  const statsInterval = setInterval(fetchStats, 5000);
+  return () => clearInterval(statsInterval);
+}, []);
+
+// Container list: 15 second interval (containers don't change often)
+useEffect(() => {
+  const listInterval = setInterval(fetchContainers, 15000);
+  return () => clearInterval(listInterval);
+}, []);
+```
+
+### Known Limitations
+
+1. **No WebSocket** - Currently polling-based, not real-time push
+2. **No container creation** - Can only manage existing containers
+3. **No image management** - Cannot pull/build/delete images
+4. **No exec/shell** - Cannot execute commands in containers
+5. **Stats delay** - 100ms delay per container for accurate CPU calculation
+
+### Future Improvements
+
+| Feature | Priority | Complexity |
+|---------|----------|------------|
+| WebSocket real-time stats | High | Medium |
+| Container terminal/shell | Medium | High |
+| Image management | Medium | Medium |
+| Network management | Low | Medium |
+| Volume management | Low | Medium |
+| Docker Compose support | Low | High |
+
+### Changelog
+
+**v0.1.12-alpha (2026-01-12)**
+- Initial Docker Manager module
+- Non-blocking stats with 2-sample approach
+- Parallel stats collection with ThreadPoolExecutor
+- Tor/ChutneX visual detection
+- Table and card views
+- Bulk operations
+- Container logs modal
+
+---
+
 ## Quick Reference
 
 ### Build Commands
@@ -540,4 +746,4 @@ docker compose down -v
 
 ---
 
-*Last updated: 2026-01-12*
+*Last updated: 12.01.2026*
