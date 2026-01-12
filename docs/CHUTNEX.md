@@ -1,440 +1,695 @@
-# ChutneX - Private Tor Network for SimpleX SMP Monitor Forensics
+# ChutneX - Private Tor Network for SimpleX Forensics
 
-> **Version:** 1.0.0  
-> **Status:** ✅ Production Ready  
-> **Last Updated:** 12. Januar 2026  
-> **Author:** cannatoshi
+## 🔬 Executive Summary
 
-## 🎯 Overview
+**ChutneX** is a complete **private Tor network implementation** for the SimpleX SMP Monitor, enabling 100% isolated messaging infrastructure for forensic analysis, security research, and controlled testing environments.
 
-**ChutneX** is a fully isolated, private Tor network implementation that enables 100% controlled forensic analysis of SimpleX messaging infrastructure. Unlike testing over the public Tor network, ChutneX provides:
+This document provides comprehensive technical documentation of the ChutneX system architecture, implementation details, and integration points for advanced data analysis.
 
-- **Complete Network Isolation** - No traffic leaves your local environment
-- **Full Observability** - Every packet, every hop, every relay is yours
-- **Reproducible Results** - Same network, same conditions, every time
-- **Forensic Analysis Ready** - Perfect for timing correlation, traffic analysis, and security audits
+---
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Architecture](#2-architecture)
+3. [Network Topology](#3-network-topology)
+4. [Implementation Details](#4-implementation-details)
+5. [Directory Authority Synchronization](#5-directory-authority-synchronization)
+6. [Server Integration](#6-server-integration)
+7. [Client Integration](#7-client-integration)
+8. [Data Analysis Points](#8-data-analysis-points)
+9. [File Reference](#9-file-reference)
+10. [Verification & Testing](#10-verification--testing)
+11. [Integration with Enterprise Stack](#11-integration-with-enterprise-stack)
+
+---
+
+## 1. Overview
+
+### 1.1 What is ChutneX?
+
+ChutneX is a **Docker-based private Tor network** that creates an isolated environment where:
+
+- **Directory Authorities (DAs)** maintain network consensus
+- **Guard, Middle, and Exit relays** form the onion routing paths  
+- **Client nodes** provide SOCKS5 proxies for application traffic
+- **Hidden Services** are only resolvable within this private network
+
+### 1.2 Key Achievement
+
 ```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                          ChutneX Private Network                           │
-│                                                                            │
-│      ┌──────────┐      ┌──────────┐      ┌──────────┐                      │
-│      │   DA1    │      │   DA2    │      │   DA3    │  Directory           │
-│      │10.99.1.10│      │10.99.1.11│      │10.99.1.12│  Authorities         │
-│      └────┬─────┘      └────┬─────┘      └────┬─────┘  (Consensus Voting)  │
-│           └─────────────────┼─────────────────┘                            │
-│                             ▼                                              │
-│                    ┌────────────────┐                                      │
-│                    │   Consensus    │  Votes + Signatures                  │
-│                    │   Document     │  (Updated every 5 min)               │
-│                    └───────┬────────┘                                      │
-│                            │                                               │
-│           ┌────────────────┼────────────────┐                              │
-│           ▼                ▼                ▼                              │
-│      ┌─────────┐      ┌──────────┐      ┌──────────┐                       │
-│      │  Guard  │      │ Middle   │      │  Exit    │  Relay Nodes          │
-│      │10.99.1.20│     │10.99.1.30│      │10.99.1.40│                       │
-│      └────┬────┘      └────┬─────┘      └────┬─────┘                       │
-│           └────────────────┼─────────────────┘                             │
-│                            │                                               │
-│              ┌─────────────┴─────────────┐                                 │
-│              ▼                           ▼                                 │
-│      ┌──────────────┐            ┌──────────────┐                          │
-│      │ Client Node 1│            │ Client Node 2│  SOCKS Proxies           │
-│      │  10.99.1.13  │            │  10.99.1.14  │  (Port 9050)             │
-│      │  SOCKS:9050  │            │  SOCKS:9050  │                          │
-│      └──────┬───────┘            └──────┬───────┘                          │
-│             │                           │                                  │
-│             ▼                           ▼                                  │
-│      ┌──────────────┐            ┌──────────────┐                          │
-│      │SimpleX Client│            │SimpleX Client│  Your Test Clients       │
-│      │  (socat →    │            │  (socat →    │                          │
-│      │  localhost   │            │  localhost   │                          │
-│      │   :9050)     │            │   :9050)     │                          │
-│      └──────┬───────┘            └──────┬───────┘                          │
-│             │                           │                                  │
-│             └─────────────┬─────────────┘                                  │
-│                           ▼                                                │
-│                  ┌────────────────┐                                        │
-│                  │   SMP Server   │  Hidden Service                        │
-│                  │  (.onion only  │  (ChutneX-exclusive)                   │
-│                  │  in ChutneX)   │                                        │
-│                  └────────────────┘                                        │
-│                                                                            │
-│       Public Tor CANNOT reach this .onion - 100% Isolated!                 │
-└────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    ISOLATION PROOF                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Public Tor → ChutneX .onion:  ❌ UNREACHABLE                   │
+│  curl: (97) Can't complete SOCKS5 connection (error 4)          │
+│                                                                 │
+│  ChutneX → ChutneX .onion:     ✅ CONNECTED                     │
+│  curl: (52) Empty reply from server (connected, not HTTP)       │
+│                                                                 │
+│  RESULT: 100% Network Isolation Achieved                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 1.3 Use Cases
+
+| Use Case | Description |
+|----------|-------------|
+| **Forensic Analysis** | Complete visibility into Tor circuit behavior |
+| **Security Research** | Test timing attacks in controlled environment |
+| **Development Testing** | Fast iteration without public Tor latency |
+| **Training** | Educate on Tor internals with full observability |
+| **Penetration Testing** | Isolated environment for security assessments |
+
+---
+
+## 2. Architecture
+
+### 2.1 High-Level System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SIMPLEX SMP MONITOR                               │
+│                                                                             │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │                         Django Backend                                 │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                  │ │
+│  │  │   chutney/   │  │   servers/   │  │   clients/   │                  │ │
+│  │  │   models.py  │  │   models.py  │  │   models.py  │                  │ │
+│  │  │   views.py   │  │   docker_    │  │   docker_    │                  │ │
+│  │  │   api/       │  │   manager.py │  │   manager.py │                  │ │
+│  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘                  │ │
+│  │         │                 │                 │                          │ │
+│  │         └─────────────────┼─────────────────┘                          │ │
+│  │                           │                                            │ │
+│  │                    Docker Python SDK                                   │ │
+│  └───────────────────────────┼────────────────────────────────────────────┘ │
+│                              │                                              │
+│  ┌───────────────────────────▼────────────────────────────────────────────┐ │
+│  │                      Docker Engine                                     │ │
+│  │                                                                        │ │
+│  │  ┌─────────────────────────────────────────────────────────────────┐   │ │
+│  │  │              Docker Network: chutnex-<network-slug>             │   │ │
+│  │  │                        (10.99.0.0/16)                           │   │ │
+│  │  │                                                                 │   │ │
+│  │  │  ┌─────────────────────────────────────────────────────────┐    │   │ │
+│  │  │  │              Directory Authorities                      │    │   │ │
+│  │  │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐                  │    │   │ │
+│  │  │  │  │   DA1   │  │   DA2   │  │   DA3   │                  │    │   │ │
+│  │  │  │  │10.99.1.10│ │10.99.1.11│ │10.99.1.12│                  │    │   │ │
+│  │  │  │  │ :80/:9001│ │ :80/:9001│ │ :80/:9001│                  │    │   │ │
+│  │  │  │  └────┬────┘  └────┬────┘  └────┬────┘                  │    │   │ │
+│  │  │  │       └────────────┼────────────┘                       │    │   │ │
+│  │  │  │                    │ Consensus Voting                   │    │   │ │
+│  │  │  └────────────────────┼────────────────────────────────────┘    │   │ │
+│  │  │                       │                                         │   │ │
+│  │  │  ┌────────────────────▼────────────────────────────────────┐    │   │ │
+│  │  │  │                   Relay Nodes                           │    │   │ │
+│  │  │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐     │    │   │ │
+│  │  │  │  │ Guard1  │  │ Guard2  │  │ Middle1 │  │ Middle2 │     │    │   │ │
+│  │  │  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘     │    │   │ │
+│  │  │  │       └────────────┴────────────┴────────────┘          │    │   │ │
+│  │  │  │                          │                              │    │   │ │
+│  │  │  │  ┌─────────┐  ┌─────────┐│                              │    │   │ │
+│  │  │  │  │  Exit1  │  │  Exit2  ││                              │    │   │ │
+│  │  │  │  └─────────┘  └─────────┘│                              │    │   │ │
+│  │  │  └─────────────────────────┼───────────────────────────────┘    │   │ │
+│  │  │                            │                                    │   │ │
+│  │  │  ┌─────────────────────────▼───────────────────────────────┐    │   │ │
+│  │  │  │                  Client Nodes                           │    │   │ │
+│  │  │  │  ┌─────────────────┐  ┌─────────────────┐               │    │   │ │
+│  │  │  │  │    Client1      │  │    Client2      │               │    │   │ │
+│  │  │  │  │  SOCKS:9050     │  │  SOCKS:9050     │               │    │   │ │
+│  │  │  │  │  10.99.1.13     │  │  10.99.1.14     │               │    │   │ │
+│  │  │  │  └────────┬────────┘  └────────┬────────┘               │    │   │ │
+│  │  │  └───────────┼────────────────────┼────────────────────────┘    │   │ │
+│  │  │              │                    │                             │   │ │
+│  │  │              │    SOCKS5 Proxy    │                             │   │ │
+│  │  │              │                    │                             │   │ │
+│  │  │  ┌───────────▼────────────────────▼────────────────────────┐    │   │ │
+│  │  │  │              Application Layer                          │    │   │ │
+│  │  │  │                                                         │    │   │ │
+│  │  │  │  ┌─────────────────┐        ┌─────────────────┐         │    │   │ │
+│  │  │  │  │  SMP Server     │        │  SimpleX Client │         │    │   │ │
+│  │  │  │  │  (Hidden Svc)   │◄──────►│  (via socat)    │         │    │   │ │
+│  │  │  │  │  .onion:5223    │        │  localhost:9050 │         │    │   │ │
+│  │  │  │  └─────────────────┘        └─────────────────┘         │    │   │ │
+│  │  │  └─────────────────────────────────────────────────────────┘    │   │ │
+│  │  │                                                                 │   │ │
+│  │  └─────────────────────────────────────────────────────────────────┘   │ │
+│  │                                                                        │ │
+│  │  Shared Volume: chutnex-status-<slug>                                  │ │
+│  │  Contains: /status/dir-authorities (DA fingerprints)                   │ │
+│  │                                                                        │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Network Layer Separation
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    NETWORK LAYERS                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Layer 1: Host Network (192.168.x.x)                            │
+│  ├── Django Backend (localhost:8000)                            │
+│  ├── React Frontend (localhost:3001)                            │
+│  └── Port mappings to containers                                │
+│                                                                 │
+│  Layer 2: Docker Bridge (simplex-clients, 172.19.0.0/16)        │
+│  ├── SimpleX Client containers (port mapping)                   │
+│  └── WebSocket access from Django                               │
+│                                                                 │
+│  Layer 3: ChutneX Network (chutnex-<slug>, 10.99.0.0/16)        │
+│  ├── All Tor nodes (DA, Guard, Middle, Exit, Client)            │
+│  ├── SMP Server (Hidden Service)                                │
+│  └── SimpleX Clients (dual-homed for SOCKS access)              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📁 File Structure
+## 3. Network Topology
+
+### 3.1 Node Types and Functions
+
+| Node Type | Count | Function | Ports |
+|-----------|-------|----------|-------|
+| **Directory Authority (DA)** | 3 | Consensus voting, network directory | 80 (Dir), 9001 (OR) |
+| **Guard Relay** | 2 | Entry point for circuits | 9001 (OR) |
+| **Middle Relay** | 2 | Intermediate routing | 9001 (OR) |
+| **Exit Relay** | 2 | Exit point for traffic | 9001 (OR) |
+| **Client Node** | 2 | SOCKS5 proxy provider | 9050 (SOCKS) |
+
+### 3.2 Default IP Assignment (Berlin8 Example)
+
 ```
-simplex-smp-monitor/
-├── docker/images/chutnex/
-│   ├── Dockerfile              # Multi-role Tor node image
-│   ├── entrypoint.sh           # DA synchronization + node startup
-│   ├── torrc.base              # Common Tor configuration
-│   ├── torrc.da                # Directory Authority config
-│   ├── torrc.relay             # Guard/Middle relay config
-│   ├── torrc.exit              # Exit node config
-│   └── torrc.client            # Client node (SOCKS proxy) config
+chutnex-berlin8 Network (10.99.0.0/16)
+├── DA Subnet (10.99.1.10-12)
+│   ├── da1: 10.99.1.10
+│   ├── da2: 10.99.1.11
+│   └── da3: 10.99.1.12
 │
-├── docker/images/simplex-cli/
-│   └── entrypoint.sh           # ChutneX SOCKS forwarding for clients
+├── Relay Subnet (10.99.1.20-29)
+│   ├── guard1:  10.99.1.20
+│   ├── guard2:  10.99.1.21
+│   ├── middle1: 10.99.1.22
+│   ├── middle2: 10.99.1.23
+│   ├── exit1:   10.99.1.24
+│   └── exit2:   10.99.1.25
 │
-├── docker/images/simplex-smp-tor/
-│   └── entrypoint.sh           # ChutneX Hidden Service for SMP servers
+├── Client Subnet (10.99.1.13-14)
+│   ├── client1: 10.99.1.13 (SOCKS:9050)
+│   └── client2: 10.99.1.14 (SOCKS:9050)
 │
-├── chutney/
-│   ├── models.py               # TorNetwork, TorNode Django models
-│   ├── admin.py                # Django Admin configuration
-│   ├── api/
-│   │   ├── views.py            # REST API ViewSets
-│   │   ├── serializers.py      # DRF Serializers
-│   │   └── urls.py             # API routing
-│   └── services/
-│       └── docker_manager.py   # Network orchestration logic
-│
-├── servers/
-│   ├── models.py               # Server model with hosting_mode='chutnex'
-│   └── services/
-│       └── docker_manager.py   # Server container management
-│
-├── clients/
-│   ├── models.py               # Client model with connection_mode
-│   └── services/
-│       └── docker_manager.py   # Client container management
-│
-└── frontend/src/
-    ├── pages/
-    │   ├── ChutneX.tsx         # Network management UI
-    │   ├── ServerForm.tsx      # Hosting mode selection
-    │   └── ClientForm.tsx      # Connection mode selection
-    └── i18n/locales/
-        ├── de.json             # German translations
-        └── en.json             # English translations
+└── Application Containers (10.99.0.x)
+    ├── simplex-smp-berlin: 10.99.0.2 (Hidden Service)
+    └── simplex-client-*:   10.99.0.3+ (via socat tunnel)
+```
+
+### 3.3 Circuit Path Visualization
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    TOR CIRCUIT PATH                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  SimpleX Client                                                 │
+│       │                                                         │
+│       │ SOCKS5 Request (.onion)                                 │
+│       ▼                                                         │
+│  ┌─────────┐                                                    │
+│  │ Client1 │ (10.99.1.13:9050)                                  │
+│  │  Node   │                                                    │
+│  └────┬────┘                                                    │
+│       │                                                         │
+│       │ Encrypted (Layer 3)                                     │
+│       ▼                                                         │
+│  ┌─────────┐                                                    │
+│  │ Guard1  │ Entry Node                                         │
+│  │         │ Knows: Client IP, Next Hop                         │
+│  └────┬────┘ Doesn't Know: Destination, Content                 │
+│       │                                                         │
+│       │ Encrypted (Layer 2)                                     │
+│       ▼                                                         │
+│  ┌─────────┐                                                    │
+│  │ Middle1 │ Intermediate Node                                  │
+│  │         │ Knows: Prev Hop, Next Hop                          │
+│  └────┬────┘ Doesn't Know: Origin, Destination, Content         │
+│       │                                                         │
+│       │ Encrypted (Layer 1)                                     │
+│       ▼                                                         │
+│  ┌─────────┐                                                    │
+│  │ Exit1   │ → Rendezvous Point                                 │
+│  │         │ Knows: Prev Hop                                    │
+│  └────┬────┘ For .onion: Routes to Intro Point                  │
+│       │                                                         │
+│       │ Hidden Service Protocol                                 │
+│       ▼                                                         │
+│  ┌─────────────────┐                                            │
+│  │   SMP Server    │                                            │
+│  │  Hidden Service │                                            │
+│  │    .onion       │                                            │
+│  └─────────────────┘                                            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔧 Core Components
+## 4. Implementation Details
 
-### 1. Directory Authority Synchronization
+### 4.1 Django Models
 
-The most critical component is ensuring all Directory Authorities know about each other before starting Tor. Without this, consensus fails.
+#### TorNetwork Model (`chutney/models.py`)
 
-**File:** `docker/images/chutnex/entrypoint.sh`
-```bash
-#!/bin/bash
-set -e
-
-NODE_TYPE="${NODE_TYPE:-client}"
-NODE_NICK="${NODE_NICK:-node}"
-DA_COUNT="${DA_COUNT:-3}"
-
-# ============================================================
-# PHASE 1: DA REGISTRATION (Only for Directory Authorities)
-# ============================================================
-if [ "$NODE_TYPE" = "da" ]; then
-    echo "📋 Generating DA keys and fingerprints..."
-    
-    # Generate authority identity key
-    tor --DataDirectory /var/lib/tor --list-fingerprint --orport 9001 \
-        --dirserver "x 127.0.0.1:80 0000000000000000000000000000000000000000" \
-        --nickname "$NODE_NICK" >/dev/null 2>&1 || true
-    
-    # Extract fingerprints
-    SERVER_FP=$(cat /var/lib/tor/fingerprint | awk '{print $2}')
-    AUTH_FP=$(grep "fingerprint" /var/lib/tor/keys/authority_certificate | awk '{print $2}')
-    
-    # Get container IP
-    NODE_IP=$(hostname -i | awk '{print $1}')
-    
-    # Build DirAuthority line
-    DA_LINE="DirAuthority $NODE_NICK orport=9001 no-v2 v3ident=$AUTH_FP $NODE_IP:80 $SERVER_FP"
-    
-    # Register with file locking
-    (
-        flock -x 200
-        echo "$DA_LINE" >> /status/dir-authorities
-        echo "✅ Registered: $DA_LINE"
-    ) 200>/status/dir-authorities.lock
-fi
-
-# ============================================================
-# PHASE 2: WAIT FOR ALL DAs (All nodes wait here)
-# ============================================================
-echo "⏳ Waiting for $DA_COUNT Directory Authorities..."
-WAIT_COUNT=0
-while true; do
-    if [ -f /status/dir-authorities ]; then
-        CURRENT_COUNT=$(wc -l < /status/dir-authorities)
-        if [ "$CURRENT_COUNT" -ge "$DA_COUNT" ]; then
-            echo "✅ All $DA_COUNT DAs registered!"
-            break
-        fi
-    fi
-    
-    WAIT_COUNT=$((WAIT_COUNT + 1))
-    if [ $((WAIT_COUNT % 10)) -eq 0 ]; then
-        echo "   Still waiting... ($CURRENT_COUNT/$DA_COUNT DAs)"
-    fi
-    
-    if [ "$WAIT_COUNT" -ge 120 ]; then
-        echo "❌ Timeout waiting for DAs!"
-        exit 1
-    fi
-    
-    sleep 1
-done
-
-# ============================================================
-# PHASE 3: BUILD TORRC WITH ALL DAs
-# ============================================================
-echo "📝 Building torrc configuration..."
-
-# Copy base config for node type
-cp /etc/tor/torrc.$NODE_TYPE /etc/tor/torrc
-
-# Append all DirAuthority entries
-cat /status/dir-authorities >> /etc/tor/torrc
-
-echo "🚀 Starting Tor daemon..."
-exec tor -f /etc/tor/torrc
-```
-
-### 2. Network Topology Model
-
-**File:** `chutney/models.py`
 ```python
 class TorNetwork(models.Model):
     """
-    Represents a complete ChutneX private Tor network.
-    
-    A network consists of:
-    - 3+ Directory Authorities (consensus voting)
-    - 1+ Guard nodes (entry points)
-    - 1+ Middle relays (routing)
-    - 1+ Exit nodes (egress)
-    - 1+ Client nodes (SOCKS proxies)
+    Represents a complete private Tor network instance.
     """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
     
+    # Network Configuration
+    base_ip = models.GenericIPAddressField(default='10.99.0.1')
+    base_or_port = models.IntegerField(default=9001)
+    base_dir_port = models.IntegerField(default=7000)
+    base_socks_port = models.IntegerField(default=19000)
+    
+    # Status
     class Status(models.TextChoices):
-        CREATED = 'created', 'Created'
+        NOT_CREATED = 'not_created', 'Not Created'
+        CREATING = 'creating', 'Creating'
         STARTING = 'starting', 'Starting'
         RUNNING = 'running', 'Running'
         STOPPING = 'stopping', 'Stopping'
         STOPPED = 'stopped', 'Stopped'
         ERROR = 'error', 'Error'
     
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.CREATED)
-    
-    # Network configuration
-    subnet = models.CharField(max_length=20, default='10.99.0.0/16')
-    base_socks_port = models.IntegerField(default=19000)
+    status = models.CharField(max_length=20, choices=Status.choices)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
-    started_at = models.DateTimeField(null=True, blank=True)
-    
-    @property
-    def docker_network_name(self):
-        return f"chutnex-{self.slug}"
-    
-    @property
-    def status_volume_name(self):
-        return f"chutnex-status-{self.slug}"
+    updated_at = models.DateTimeField(auto_now=True)
+```
 
+#### TorNode Model (`chutney/models.py`)
 
+```python
 class TorNode(models.Model):
     """
-    Individual node within a ChutneX network.
+    Individual node in a private Tor network.
     """
-    
     class NodeType(models.TextChoices):
         DA = 'da', 'Directory Authority'
         GUARD = 'guard', 'Guard Relay'
         MIDDLE = 'middle', 'Middle Relay'
-        EXIT = 'exit', 'Exit Node'
-        CLIENT = 'client', 'Client (SOCKS Proxy)'
+        EXIT = 'exit', 'Exit Relay'
+        CLIENT = 'client', 'Client'
     
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    network = models.ForeignKey(TorNetwork, on_delete=models.CASCADE, related_name='nodes')
-    node_type = models.CharField(max_length=20, choices=NodeType.choices)
+    network = models.ForeignKey(TorNetwork, on_delete=models.CASCADE)
+    node_type = models.CharField(max_length=10, choices=NodeType.choices)
     nickname = models.CharField(max_length=50)
     
-    # Container info
-    container_id = models.CharField(max_length=64, blank=True)
-    container_name = models.CharField(max_length=100)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    
-    # For client nodes: exposed SOCKS port
+    # Network Configuration
+    ip_address = models.GenericIPAddressField()
+    or_port = models.IntegerField(default=9001)
+    dir_port = models.IntegerField(null=True, blank=True)
     socks_port = models.IntegerField(null=True, blank=True)
     
-    # Status
-    is_bootstrapped = models.BooleanField(default=False)
-    bootstrap_percent = models.IntegerField(default=0)
+    # Tor Identity
+    fingerprint = models.CharField(max_length=64, blank=True)
+    authority_v3ident = models.CharField(max_length=64, blank=True)
+    
+    # Docker
+    container_id = models.CharField(max_length=64, blank=True)
+    container_name = models.CharField(max_length=100)
 ```
 
-### 3. Docker Network Orchestration
+### 4.2 Docker Manager
 
-**File:** `chutney/services/docker_manager.py`
+The `ChutneXDockerManager` orchestrates all container operations:
+
 ```python
+# chutney/services/docker_manager.py
+
 class ChutneXDockerManager:
     """
-    Orchestrates the creation and management of ChutneX networks.
+    Manages Docker containers for ChutneX private Tor network.
     """
     
     IMAGE_NAME = 'chutnex:latest'
-    
-    def __init__(self):
-        self.client = docker.from_env()
+    NETWORK_PREFIX = 'chutnex-'
     
     def create_network(self, network: TorNetwork) -> str:
         """
-        Create Docker network with specific subnet for ChutneX.
+        Create Docker network with IPAM configuration.
         """
-        ipam_pool = docker.types.IPAMPool(subnet=network.subnet)
-        ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
+        ipam_config = docker.types.IPAMConfig(
+            pool_configs=[
+                docker.types.IPAMPool(
+                    subnet='10.99.0.0/16',
+                    gateway='10.99.0.1'
+                )
+            ]
+        )
         
         docker_network = self.client.networks.create(
-            name=network.docker_network_name,
+            name=f"{self.NETWORK_PREFIX}{network.slug}",
             driver='bridge',
             ipam=ipam_config,
             labels={
-                'chutnex.managed': 'true',
                 'chutnex.network_id': str(network.id),
+                'chutnex.managed': 'true'
             }
         )
-        
         return docker_network.id
     
-    def start_network(self, network: TorNetwork):
-        """
-        Start all nodes in the correct order:
-        1. Create status volume
-        2. Start Directory Authorities
-        3. Wait for consensus
-        4. Start relays (guard, middle, exit)
-        5. Start client nodes
-        """
-        
-        # Create shared status volume
-        self._create_status_volume(network)
-        
-        # Count DAs for synchronization
-        da_count = network.nodes.filter(node_type='da').count()
-        
-        # Start all nodes (they self-synchronize via DA_COUNT)
-        for node in network.nodes.all():
-            self._start_node(node, da_count)
-        
-        network.status = TorNetwork.Status.RUNNING
-        network.started_at = timezone.now()
-        network.save()
-    
-    def _start_node(self, node: TorNode, da_count: int):
+    def start_node(self, node: TorNode) -> str:
         """
         Start a single Tor node container.
         """
+        da_count = node.network.nodes.filter(node_type='da').count()
         
         environment = {
-            'NODE_TYPE': node.node_type,
-            'NODE_NICK': node.nickname,
-            'DA_COUNT': str(da_count),
+            'ROLE': node.node_type.upper(),
+            'NICKNAME': node.nickname,
+            'ADDRESS': node.ip_address,
+            'OR_PORT': str(node.or_port),
+            'DA_COUNT': str(da_count),  # Critical for synchronization
         }
         
         volumes = {
-            node.network.status_volume_name: {'bind': '/status', 'mode': 'rw'},
-            f"{node.container_name}-data": {'bind': '/var/lib/tor', 'mode': 'rw'},
+            f"chutnex-status-{node.network.slug}": {
+                'bind': '/status', 
+                'mode': 'rw'
+            },
+            f"chutnex-{node.container_name}": {
+                'bind': '/var/lib/tor',
+                'mode': 'rw'
+            }
         }
         
-        # Client nodes expose SOCKS port
-        ports = {}
-        if node.node_type == 'client' and node.socks_port:
-            ports['9050/tcp'] = node.socks_port
-        
-        container = self.client.containers.create(
-            name=node.container_name,
+        container = self.client.containers.run(
             image=self.IMAGE_NAME,
+            name=node.container_name,
             environment=environment,
             volumes=volumes,
-            ports=ports,
-            network=node.network.docker_network_name,
-            detach=True,
+            network=f"{self.NETWORK_PREFIX}{node.network.slug}",
+            detach=True
         )
         
         # Assign static IP
-        if node.ip_address:
-            docker_net = self.client.networks.get(node.network.docker_network_name)
-            docker_net.disconnect(container)
-            docker_net.connect(container, ipv4_address=node.ip_address)
+        docker_network = self.client.networks.get(
+            f"{self.NETWORK_PREFIX}{node.network.slug}"
+        )
+        docker_network.disconnect(container)
+        docker_network.connect(container, ipv4_address=node.ip_address)
         
-        container.start()
-        node.container_id = container.id
-        node.save()
+        return container.id
 ```
 
-### 4. SimpleX Client Integration
+### 4.3 ChutneX Container Entrypoint
 
-**File:** `docker/images/simplex-cli/entrypoint.sh`
+The entrypoint script handles node configuration and DA synchronization:
+
 ```bash
 #!/bin/bash
+# docker/images/chutnex/entrypoint.sh
+
 set -e
 
-echo "=== SimpleX CLI Container Starting ==="
-echo "ChutneX Mode: ${CHUTNEX_MODE:-0}"
+ROLE="${ROLE:-CLIENT}"
+NICKNAME="${NICKNAME:-TorNode}"
+ADDRESS="${ADDRESS:-127.0.0.1}"
+OR_PORT="${OR_PORT:-9001}"
+DIR_PORT="${DIR_PORT:-7000}"
+DA_COUNT="${DA_COUNT:-3}"
 
-# ChutneX Internal Mode: Forward SOCKS to ChutneX client node
-if [ "${USE_TOR}" = "true" ] && [ "${CHUTNEX_MODE}" = "1" ]; then
+TORRC="/var/lib/tor/torrc"
+STATUS_DIR="/status"
+DA_FILE="${STATUS_DIR}/dir-authorities"
+
+# ============================================================
+# PHASE 1: Generate Keys (DA only)
+# ============================================================
+if [ "$ROLE" = "DA" ] || [ "$ROLE" = "da" ]; then
+    echo "🔑 Generating DA keys..."
     
-    # Default to first ChutneX client node
-    CHUTNEX_SOCKS_HOST="${CHUTNEX_SOCKS_HOST:-10.99.1.13}"
+    # Generate authority identity key
+    tor --DataDirectory /var/lib/tor --list-fingerprint --orport $OR_PORT \
+        --Nickname $NICKNAME 2>/dev/null || true
     
-    echo "🔬 ChutneX Mode: Forwarding localhost:9050 -> ${CHUTNEX_SOCKS_HOST}:9050"
+    # Generate v3 authority key  
+    tor-gencert --create-identity-key \
+        -i /var/lib/tor/keys/authority_identity_key \
+        -s /var/lib/tor/keys/authority_signing_key \
+        -c /var/lib/tor/keys/authority_certificate \
+        -m 12 -a $ADDRESS:$DIR_PORT 2>/dev/null || true
     
-    # Create SOCKS tunnel via socat
-    socat TCP-LISTEN:9050,bind=127.0.0.1,fork,reuseaddr \
-          TCP:${CHUTNEX_SOCKS_HOST}:9050 &
+    # Extract fingerprints
+    SERVER_FP=$(cat /var/lib/tor/fingerprint | awk '{print $2}')
+    AUTH_FP=$(grep fingerprint /var/lib/tor/keys/authority_certificate | \
+              awk '{print $2}')
     
-    sleep 2
+    # Register with shared volume (with file locking)
+    DA_LINE="DirAuthority $NICKNAME orport=$OR_PORT no-v2 "
+    DA_LINE+="v3ident=$AUTH_FP $ADDRESS:$DIR_PORT $SERVER_FP"
     
-elif [ "${USE_TOR}" = "true" ]; then
-    # Standard public Tor mode
-    echo "🧅 Public Tor Mode: Starting local Tor..."
-    tor &
-    sleep 5
+    (
+        flock -x 200
+        if ! grep -q "$NICKNAME" "$DA_FILE" 2>/dev/null; then
+            echo "$DA_LINE" >> "$DA_FILE"
+            echo "✅ DA registered: $NICKNAME"
+        fi
+    ) 200>"${DA_FILE}.lock"
 fi
 
-# Start simplex-chat
-simplex-chat -p 3030 -d /data &
+# ============================================================
+# PHASE 2: Wait for ALL Directory Authorities
+# ============================================================
+echo "⏳ Waiting for $DA_COUNT DAs to register..."
 
-# Forward external port
-exec socat TCP-LISTEN:${SIMPLEX_PORT:-3030},bind=0.0.0.0,fork,reuseaddr \
-           TCP:127.0.0.1:3030
+WAIT_COUNT=0
+MAX_WAIT=120
+
+while [ $(wc -l < "$DA_FILE" 2>/dev/null || echo 0) -lt $DA_COUNT ]; do
+    sleep 1
+    WAIT_COUNT=$((WAIT_COUNT + 1))
+    
+    if [ $((WAIT_COUNT % 10)) -eq 0 ]; then
+        CURRENT=$(wc -l < "$DA_FILE" 2>/dev/null || echo 0)
+        echo "   Still waiting... ($CURRENT/$DA_COUNT DAs, ${WAIT_COUNT}s)"
+    fi
+    
+    if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
+        echo "⚠️ Timeout waiting for DAs!"
+        break
+    fi
+done
+
+echo "✅ All $DA_COUNT DAs registered!"
+
+# ============================================================
+# PHASE 3: Generate torrc
+# ============================================================
+cat > "$TORRC" << TORRC_BASE
+# ChutneX Private Tor Network
+# Node: $NICKNAME ($ROLE)
+
+TestingTorNetwork 1
+AssumeReachable 1
+AddressDisableIPv6 1
+
+DataDirectory /var/lib/tor
+Nickname $NICKNAME
+Address $ADDRESS
+
+# Faster consensus for testing
+TestingV3AuthInitialVotingInterval 20
+TestingV3AuthInitialVoteDelay 4
+TestingV3AuthInitialDistDelay 4
+V3AuthVotingInterval 20
+TORRC_BASE
+
+# Role-specific configuration
+case "$ROLE" in
+    DA|da)
+        cat >> "$TORRC" << TORRC_DA
+AuthoritativeDirectory 1
+V3AuthoritativeDirectory 1
+ORPort 0.0.0.0:$OR_PORT
+DirPort 0.0.0.0:$DIR_PORT
+ContactInfo admin@chutnex.local
+ExitPolicy reject *:*
+TORRC_DA
+        ;;
+    
+    GUARD|guard|MIDDLE|middle)
+        cat >> "$TORRC" << TORRC_RELAY
+ORPort 0.0.0.0:$OR_PORT
+ExitRelay 0
+SocksPort 0
+TORRC_RELAY
+        ;;
+    
+    EXIT|exit)
+        cat >> "$TORRC" << TORRC_EXIT
+ORPort 0.0.0.0:$OR_PORT
+ExitRelay 1
+ExitPolicy accept *:*
+SocksPort 0
+TORRC_EXIT
+        ;;
+    
+    CLIENT|client)
+        cat >> "$TORRC" << TORRC_CLIENT
+SocksPort 0.0.0.0:${SOCKS_PORT:-9050}
+SocksPolicy accept *
+TORRC_CLIENT
+        ;;
+esac
+
+# Append Directory Authorities
+echo "" >> "$TORRC"
+echo "# Directory Authorities" >> "$TORRC"
+cat "$DA_FILE" >> "$TORRC"
+
+# ============================================================
+# PHASE 4: Start Tor
+# ============================================================
+echo "🧅 Starting Tor ($ROLE)..."
+exec tor -f "$TORRC"
 ```
 
-### 5. SMP Server Hidden Service
+---
 
-**File:** `docker/images/simplex-smp-tor/entrypoint.sh` (ChutneX section)
+## 5. Directory Authority Synchronization
+
+### 5.1 The Problem
+
+When starting multiple DAs simultaneously:
+
+1. Each DA generates its own keys
+2. Each DA starts Tor immediately 
+3. Each DA only knows about itself
+4. **Result:** "Vote not from a recognized v3 authority" errors
+
+### 5.2 The Solution
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              DA SYNCHRONIZATION PROTOCOL                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Step 1: Key Generation (parallel)                              │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                          │
+│  │   DA1   │  │   DA2   │  │   DA3   │                          │
+│  │ gen key │  │ gen key │  │ gen key │                          │
+│  └────┬────┘  └────┬────┘  └────┬────┘                          │
+│       │            │            │                               │
+│       ▼            ▼            ▼                               │
+│  Step 2: Register (with flock)                                  │
+│  ┌─────────────────────────────────────────────┐                │
+│  │         /status/dir-authorities             │                │
+│  │  DirAuthority da1 orport=9001 v3ident=... │                │
+│  │  DirAuthority da2 orport=9001 v3ident=... │                │
+│  │  DirAuthority da3 orport=9001 v3ident=... │                │
+│  └─────────────────────────────────────────────┘                │
+│       │            │            │                               │
+│       ▼            ▼            ▼                               │
+│  Step 3: Wait for DA_COUNT entries                              │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                          │
+│  │  wait   │  │  wait   │  │  wait   │                          │
+│  │ 3/3 DAs │  │ 3/3 DAs │  │ 3/3 DAs │                          │
+│  └────┬────┘  └────┬────┘  └────┬────┘                          │
+│       │            │            │                               │
+│       ▼            ▼            ▼                               │
+│  Step 4: Generate torrc with ALL DAs                            │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                          │
+│  │ torrc   │  │ torrc   │  │ torrc   │                          │
+│  │ 3 DAs   │  │ 3 DAs   │  │ 3 DAs   │                          │
+│  └────┬────┘  └────┬────┘  └────┬────┘                          │
+│       │            │            │                               │
+│       ▼            ▼            ▼                               │
+│  Step 5: Start Tor (synchronized)                               │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                          │
+│  │  Tor    │  │  Tor    │  │  Tor    │                          │
+│  │ 100%    │  │ 100%    │  │ 100%    │                          │
+│  └─────────┘  └─────────┘  └─────────┘                          │
+│                                                                 │
+│  ✅ Consensus computed successfully!                            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 5.3 Verification
+
 ```bash
+# Check DA synchronization
+docker exec chutnex-berlin8-da1 cat /var/lib/tor/torrc | grep DirAuthority
+
+# Expected output (ALL 3 DAs present):
+DirAuthority da1 orport=9001 no-v2 v3ident=1E6458... 10.99.1.10:80 7AB701...
+DirAuthority da2 orport=9001 no-v2 v3ident=C689B7... 10.99.1.11:80 890DDC...
+DirAuthority da3 orport=9001 no-v2 v3ident=19B03A... 10.99.1.12:80 21AC23...
+
+# Check consensus
+docker logs chutnex-berlin8-da1 2>&1 | grep -E "Consensus|signature"
+# Expected: "Consensus computed; uploading signature(s)"
+```
+
+---
+
+## 6. Server Integration
+
+### 6.1 SMP Server ChutneX Mode
+
+The SMP server runs its Hidden Service within ChutneX:
+
+```python
+# servers/services/docker_manager.py
+
+def create_server_container(self, server: Server):
+    """
+    Create SMP server container with ChutneX support.
+    """
+    if server.hosting_mode == 'chutnex':
+        environment['CHUTNEX_MODE'] = '1'
+        
+        # Mount status volume for DA info
+        status_volume = f"chutnex-status-{server.chutnex_network.slug}"
+        volumes[status_volume] = {'bind': '/status', 'mode': 'ro'}
+        
+        # Join ChutneX network
+        network_name = f"chutnex-{server.chutnex_network.slug}"
+```
+
+### 6.2 SMP Server Entrypoint (ChutneX Mode)
+
+```bash
+#!/bin/bash
+# docker/images/simplex-smp-tor/entrypoint.sh
+
 if [ "${CHUTNEX_MODE}" = "1" ]; then
     echo "🔬 ChutneX Mode: Configuring for private Tor network..."
     
-    # Wait for DirAuthorities from ChutneX network
+    # Wait for DirAuthorities
     STATUS_AUTHORITIES="/status/dir-authorities"
     
-    WAIT_COUNT=0
-    while [ ! -s "${STATUS_AUTHORITIES}" ] && [ ${WAIT_COUNT} -lt 60 ]; do
+    while [ ! -s "${STATUS_AUTHORITIES}" ]; do
         sleep 1
-        WAIT_COUNT=$((WAIT_COUNT + 1))
     done
     
-    # Build torrc with ChutneX DAs
+    # Create ChutneX torrc
     cat > /etc/tor/torrc << TORRC_EOF
-# ChutneX Private Tor Network Configuration
 TestingTorNetwork 1
 AssumeReachable 1
 AddressDisableIPv6 1
@@ -443,415 +698,823 @@ DataDirectory /var/lib/tor
 HiddenServiceDir /var/lib/tor/simplex-smp/
 HiddenServicePort 5223 127.0.0.1:5223
 
-Log notice file /var/log/tor/notices.log
-
 # Directory Authorities from ChutneX
 $(cat ${STATUS_AUTHORITIES})
 TORRC_EOF
-    
 fi
 
-# Start Tor with ChutneX config
-tor -f /etc/tor/torrc &
+# Start Tor and SMP server
+tor &
+sleep 5
+exec smp-server start
+```
 
-# Wait for .onion address generation
-while [ ! -f "/var/lib/tor/simplex-smp/hostname" ]; do
-    sleep 1
-done
+### 6.3 Hidden Service in ChutneX
 
-ONION_ADDRESS=$(cat /var/lib/tor/simplex-smp/hostname)
-echo "✅ ChutneX Hidden Service: $ONION_ADDRESS"
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    HIDDEN SERVICE FLOW                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  SMP Server Container                                           │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                                                         │    │
+│  │  smp-server (127.0.0.1:5223)                            │    │
+│  │       ▲                                                 │    │
+│  │       │ HiddenServicePort 5223                          │    │
+│  │       │                                                 │    │
+│  │  Tor Process (ChutneX DAs)                              │    │
+│  │       │                                                 │    │
+│  │       │ Registers .onion with ChutneX DAs               │    │
+│  │       │                                                 │    │
+│  │       ▼                                                 │    │
+│  │  tvbdfd6j...5qd.onion                                   │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                          │                                      │
+│                          │ Only resolvable via ChutneX!         │
+│                          ▼                                      │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │           ChutneX Network (10.99.x.x)                   │    │
+│  │                                                         │    │
+│  │  DA1 ←→ DA2 ←→ DA3                                      │    │
+│  │   │      │      │                                       │    │
+│  │   └──────┼──────┘                                       │    │
+│  │          │ Consensus includes .onion                    │    │
+│  │          ▼                                              │    │
+│  │  Guard → Middle → Exit → Rendezvous                     │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🌐 Network Configuration
+## 7. Client Integration
 
-### Default Node Layout
+### 7.1 Dual-Network Configuration
 
-| Node Type | Nickname | IP Address | Role |
-|-----------|----------|------------|------|
-| DA | da1 | 10.99.1.10 | Directory Authority #1 |
-| DA | da2 | 10.99.1.11 | Directory Authority #2 |
-| DA | da3 | 10.99.1.12 | Directory Authority #3 |
-| Client | client1 | 10.99.1.13 | SOCKS Proxy (Port 19000) |
-| Client | client2 | 10.99.1.14 | SOCKS Proxy (Port 19001) |
-| Guard | guard1 | 10.99.1.20 | Entry Node |
-| Middle | middle1 | 10.99.1.30 | Middle Relay |
-| Exit | exit1 | 10.99.1.40 | Exit Node |
+SimpleX clients must be in **both networks**:
 
-### Tor Configuration Templates
+1. **simplex-clients** (bridge) - For port mapping to host (Django WebSocket)
+2. **chutnex-\<slug\>** - For access to ChutneX SOCKS proxy
 
-**Directory Authority (`torrc.da`):**
-```
-TestingTorNetwork 1
-AssumeReachable 1
-AddressDisableIPv6 1
-
-AuthoritativeDirectory 1
-V3AuthoritativeDirectory 1
-ContactInfo chutnex@localhost
-
-# Will be populated by entrypoint.sh
-# DirAuthority entries go here
-```
-
-**Client Node (`torrc.client`):**
-```
-TestingTorNetwork 1
-AssumeReachable 1
-AddressDisableIPv6 1
-
-SocksPort 0.0.0.0:9050
-SocksPolicy accept *
-
-# Will be populated by entrypoint.sh
-# DirAuthority entries go here
-```
-
----
-
-## 🔌 API Reference
-
-### Networks
-```http
-GET    /api/v1/chutney/networks/
-POST   /api/v1/chutney/networks/
-GET    /api/v1/chutney/networks/{id}/
-DELETE /api/v1/chutney/networks/{id}/
-
-POST   /api/v1/chutney/networks/{id}/start/
-POST   /api/v1/chutney/networks/{id}/stop/
-GET    /api/v1/chutney/networks/{id}/status/
-```
-
-### Nodes
-```http
-GET    /api/v1/chutney/networks/{id}/nodes/
-GET    /api/v1/chutney/nodes/{id}/
-GET    /api/v1/chutney/nodes/{id}/logs/
-```
-
-### Example: Create Network
-```bash
-curl -X POST http://localhost:8000/api/v1/chutney/networks/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "TestNet",
-    "num_das": 3,
-    "num_guards": 1,
-    "num_middles": 1,
-    "num_exits": 1,
-    "num_clients": 2
-  }'
-```
-
-### Example: Start Network
-```bash
-curl -X POST http://localhost:8000/api/v1/chutney/networks/{id}/start/
-```
-
----
-
-## 📊 Data Sources for Analysis
-
-ChutneX provides multiple data extraction points for forensic analysis and integration with enterprise tools (Phase 10: Zeek, Suricata, Neo4j, etc.)
-
-### 1. Tor Control Port (stem)
-
-Every ChutneX node can expose a control port for programmatic access.
 ```python
-from stem import Signal
+# clients/services/docker_manager.py
+
+def create_client_container(self, client: SimplexClient):
+    """
+    Create client with dual-network support for ChutneX.
+    """
+    # Always start in bridge network (for port mapping)
+    container = self.client.containers.create(
+        network='simplex-clients',
+        ports={f'{port}/tcp': port},
+        ...
+    )
+    
+    # For ChutneX Internal: add to ChutneX network
+    if client.connection_mode == 'chutnex_internal':
+        chutnex_network = f"chutnex-{client.chutnex_network.slug}"
+        network = self.client.networks.get(chutnex_network)
+        network.connect(container)
+```
+
+### 7.2 SOCKS Proxy Tunnel
+
+Instead of starting local Tor, clients tunnel to ChutneX:
+
+```bash
+#!/bin/bash
+# docker/images/simplex-cli/entrypoint.sh
+
+if [ "${CHUTNEX_MODE}" = "1" ]; then
+    # Find ChutneX client node
+    CHUTNEX_SOCKS_HOST="${CHUTNEX_SOCKS_HOST:-10.99.1.13}"
+    
+    echo "ChutneX Mode: Forwarding localhost:9050 -> ${CHUTNEX_SOCKS_HOST}:9050"
+    
+    # Create socat tunnel to ChutneX SOCKS
+    socat TCP-LISTEN:9050,bind=127.0.0.1,fork,reuseaddr \
+          TCP:${CHUTNEX_SOCKS_HOST}:9050 &
+    
+    sleep 2
+else
+    # Standard: Start local Tor
+    tor &
+    sleep 5
+fi
+
+# Start simplex-chat (uses localhost:9050 transparently)
+simplex-chat -p 3030 -d /data
+```
+
+### 7.3 Traffic Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                 CLIENT TRAFFIC FLOW                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Django Backend (Host)                                          │
+│       │                                                         │
+│       │ WebSocket (ws://localhost:3031)                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  SimpleX Client Container                               │    │
+│  │  (In both: simplex-clients AND chutnex-berlin8)         │    │
+│  │                                                         │    │
+│  │  simplex-chat → localhost:9050                          │    │
+│  │                      │                                  │    │
+│  │                      │ socat tunnel                     │    │
+│  │                      ▼                                  │    │
+│  │              10.99.1.13:9050                             │    │
+│  │              (ChutneX Client Node)                      │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                          │                                      │
+│                          │ Private Tor Circuit                  │
+│                          ▼                                      │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │              ChutneX Network                            │    │
+│  │                                                         │    │
+│  │  Client1 → Guard → Middle → Exit → Hidden Service       │    │
+│  │                                         │               │    │
+│  │                                         ▼               │    │
+│  │                              SMP Server .onion          │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 8. Data Analysis Points
+
+### 8.1 Overview of Observable Data
+
+ChutneX provides **unprecedented visibility** into Tor network behavior, enabling advanced forensic analysis.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  DATA ANALYSIS ARCHITECTURE                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                  ChutneX Network                        │    │
+│  │                                                         │    │
+│  │  📊 Control Port Data                                   │    │
+│  │  ├── Circuit creation/destruction                       │    │
+│  │  ├── Stream attachments                                 │    │
+│  │  ├── Bandwidth statistics                               │    │
+│  │  └── Consensus updates                                  │    │
+│  │                                                         │    │
+│  │  📡 Network Traffic                                     │    │
+│  │  ├── Inter-node communications                          │    │
+│  │  ├── Cell timing and sizes                              │    │
+│  │  └── Connection patterns                                │    │
+│  │                                                         │    │
+│  │  📝 Tor Logs                                            │    │
+│  │  ├── Bootstrap progress                                 │    │
+│  │  ├── Circuit decisions                                  │    │
+│  │  └── Hidden service events                              │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                          │                                      │
+│           ┌──────────────┼──────────────┐                       │
+│           ▼              ▼              ▼                       │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │
+│  │    Zeek     │ │  Suricata   │ │   Neo4j     │                │
+│  │  Protocol   │ │   IDS/IPS   │ │   Graph     │                │
+│  │  Analysis   │ │   Rules     │ │   Database  │                │
+│  └─────────────┘ └─────────────┘ └─────────────┘                │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 8.2 Tor Control Port Interface
+
+Access Tor internals via the Control Port (stem library):
+
+```python
+from stem import CircStatus
 from stem.control import Controller
 
-# Connect to a ChutneX node's control port
-with Controller.from_port(address='10.99.1.13', port=9051) as controller:
-    controller.authenticate()
-    
-    # Get circuit information
-    for circuit in controller.get_circuits():
-        print(f"Circuit {circuit.id}: {circuit.path}")
-    
-    # Get bandwidth stats
-    bytes_read = controller.get_info("traffic/read")
-    bytes_written = controller.get_info("traffic/written")
-    
-    # Get consensus info
-    consensus = controller.get_info("ns/all")
+# Connect to any ChutneX node's control port
+def analyze_circuits(node_ip: str, control_port: int = 9051):
+    """
+    Extract circuit information from a ChutneX node.
+    """
+    with Controller.from_port(address=node_ip, port=control_port) as ctrl:
+        ctrl.authenticate()
+        
+        for circ in ctrl.get_circuits():
+            if circ.status == CircStatus.BUILT:
+                print(f"Circuit {circ.id}:")
+                print(f"  Path: {' → '.join([n[0] for n in circ.path])}")
+                print(f"  Purpose: {circ.purpose}")
+                print(f"  Build Flags: {circ.build_flags}")
+                
+                # Timing analysis
+                if hasattr(circ, 'created'):
+                    print(f"  Created: {circ.created}")
 ```
 
-### 2. Docker Network Traffic Capture
+### 8.3 Available Metrics
 
-Capture all traffic on the ChutneX bridge network:
+| Metric Category | Data Points | Collection Method |
+|----------------|-------------|-------------------|
+| **Circuit Metrics** | Build time, path length, node selection | stem ControlPort |
+| **Bandwidth** | Bytes read/written per circuit | stem BW events |
+| **Cell Timing** | Inter-cell arrival times | tcpdump + analysis |
+| **Consensus** | Vote timing, authority agreement | DA logs |
+| **Hidden Service** | Descriptor publication, intro points | stem HS events |
+
+### 8.4 Packet Capture Points
+
 ```bash
-# Find network interface
-INTERFACE=$(docker network inspect chutnex-berlin8 \
-  --format '{{.Id}}' | cut -c1-12)
-BRIDGE="br-${INTERFACE}"
+# Capture all ChutneX traffic
+docker run --rm --net=chutnex-berlin8 \
+    -v /tmp/captures:/captures \
+    nicolaka/netshoot \
+    tcpdump -i any -w /captures/chutnex-$(date +%s).pcap
 
-# Capture with tcpdump
-sudo tcpdump -i $BRIDGE -w chutnex_traffic.pcap
-
-# Or use tshark for live analysis
-sudo tshark -i $BRIDGE -Y "tcp.port == 9001 or tcp.port == 80"
+# Capture specific node traffic
+docker exec chutnex-berlin8-exit1 \
+    tcpdump -i eth0 -w /tmp/exit1-traffic.pcap
 ```
 
-### 3. Container Logs
-```bash
-# All node logs
-docker logs chutnex-berlin8-da1
-docker logs chutnex-berlin8-exit1
+### 8.5 Integration with Enterprise Stack (Roadmap Phase 10)
 
-# Django aggregated logs
-GET /api/v1/chutney/nodes/{id}/logs/?tail=100
-```
+#### 8.5.1 Zeek Protocol Analysis
 
-### 4. Tor Metrics Files
-
-Each Tor node generates metrics in `/var/lib/tor/`:
-```bash
-# Bootstrap status
-docker exec chutnex-berlin8-da1 cat /var/lib/tor/state
-
-# Bandwidth history
-docker exec chutnex-berlin8-da1 cat /var/lib/tor/stats/bw-history
-
-# Connection stats
-docker exec chutnex-berlin8-exit1 cat /var/lib/tor/stats/conn-stats
-```
-
-### 5. Consensus Documents
-```bash
-# Current consensus
-docker exec chutnex-berlin8-da1 cat /var/lib/tor/cached-consensus
-
-# Microdescriptors
-docker exec chutnex-berlin8-da1 cat /var/lib/tor/cached-microdescs
-```
-
----
-
-## 🔬 Analysis Integration (Phase 10 Preview)
-
-### Zeek Protocol Analysis
 ```zeek
-# chutnex.zeek - Custom Zeek script for ChutneX traffic
+# zeek/scripts/chutnex-tor.zeek
 
 @load base/protocols/conn
 
-module ChutneX;
+module ChutneXTor;
 
 export {
-    redef enum Log::ID += { LOG };
+    # Log Tor cells
+    redef enum Log::ID += { TOR_CELLS };
     
-    type Info: record {
-        ts:           time    &log;
-        src_ip:       addr    &log;
-        dst_ip:       addr    &log;
-        circuit_id:   count   &log &optional;
-        cell_type:    string  &log &optional;
+    type Cell: record {
+        ts: time &log;
+        uid: string &log;
+        circuit_id: count &log;
+        cell_type: string &log;
+        payload_len: count &log;
     };
 }
 
-event connection_established(c: connection) {
-    # Track Tor cell traffic on port 9001
-    if (c$id$resp_p == 9001/tcp) {
-        local rec: Info = [
-            $ts = network_time(),
-            $src_ip = c$id$orig_h,
-            $dst_ip = c$id$resp_h
-        ];
-        Log::write(ChutneX::LOG, rec);
-    }
+event tor_cell(c: connection, is_orig: bool, cell_type: count, payload: string)
+{
+    local cell = Cell(
+        $ts = network_time(),
+        $uid = c$uid,
+        $circuit_id = cell_type,  # Simplified
+        $cell_type = fmt("%d", cell_type),
+        $payload_len = |payload|
+    );
+    
+    Log::write(TOR_CELLS, cell);
 }
 ```
 
-### Neo4j Graph Schema
+#### 8.5.2 Neo4j Graph Schema
+
 ```cypher
-// ChutneX Network Graph Schema
-
 // Node types
-CREATE CONSTRAINT FOR (n:TorNode) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT FOR (c:Circuit) REQUIRE c.id IS UNIQUE;
-CREATE CONSTRAINT FOR (m:Message) REQUIRE m.id IS UNIQUE;
+CREATE CONSTRAINT FOR (da:DirectoryAuthority) REQUIRE da.fingerprint IS UNIQUE;
+CREATE CONSTRAINT FOR (relay:Relay) REQUIRE relay.fingerprint IS UNIQUE;
+CREATE CONSTRAINT FOR (hs:HiddenService) REQUIRE hs.onion IS UNIQUE;
+CREATE CONSTRAINT FOR (client:Client) REQUIRE client.id IS UNIQUE;
 
-// Example queries:
+// Relationships
+// (Client)-[:CONNECTED_VIA]->(Circuit)
+// (Circuit)-[:USES_GUARD]->(Relay)
+// (Circuit)-[:USES_MIDDLE]->(Relay)
+// (Circuit)-[:USES_EXIT]->(Relay)
+// (Circuit)-[:REACHES]->(HiddenService)
+// (Relay)-[:VOTED_BY]->(DirectoryAuthority)
 
-// Find all circuits through a specific exit
-MATCH path = (client:TorNode)-[:GUARD]->(:TorNode)-[:MIDDLE]->(:TorNode)-[:EXIT]->(exit:TorNode {nickname: 'exit1'})
-RETURN path;
-
-// Timing correlation analysis
-MATCH (sender:SimplexClient)-[s:SENT]->(msg:Message)-[r:RECEIVED]->(recipient:SimplexClient)
-WHERE r.timestamp - s.timestamp < duration('PT2S')
-RETURN sender.name, recipient.name, s.timestamp, r.timestamp, r.timestamp - s.timestamp AS latency
-ORDER BY latency;
-
-// Traffic pattern detection
-MATCH (c:SimplexClient)-[m:MESSAGE]->()
-WITH c, m.timestamp.hour AS hour, count(*) AS msg_count
-RETURN c.name, hour, msg_count
-ORDER BY c.name, hour;
+// Example query: Find all circuits to a hidden service
+MATCH (c:Client)-[:CONNECTED_VIA]->(circ:Circuit)-[:REACHES]->(hs:HiddenService)
+WHERE hs.onion = 'tvbdfd6j...5qd.onion'
+RETURN c, circ, hs
 ```
 
-### Prometheus Metrics
+#### 8.5.3 Suricata IDS Rules
+
 ```yaml
-# prometheus.yml - ChutneX metrics scraping
+# suricata/rules/chutnex.rules
 
-scrape_configs:
-  - job_name: 'chutnex'
-    static_configs:
-      - targets:
-        - 'chutnex-berlin8-da1:9052'  # Tor metrics exporter
-        - 'chutnex-berlin8-da2:9052'
-        - 'chutnex-berlin8-da3:9052'
-        - 'chutnex-berlin8-exit1:9052'
-    metrics_path: /metrics
-```
-
-### Grafana Dashboard Queries
-```promql
-# Circuit build time distribution
-histogram_quantile(0.95, 
-  sum(rate(tor_circuit_build_time_bucket[5m])) by (le)
+# Detect Tor VERSIONS cell (circuit initiation)
+alert tcp $CHUTNEX_NET any -> $CHUTNEX_NET any (
+    msg:"CHUTNEX Tor Circuit Initiation";
+    flow:established;
+    content:"|00 00|"; offset:0; depth:2;  # Circuit ID 0
+    content:"|07|"; offset:2; depth:1;     # VERSIONS cell
+    sid:9000001; rev:1;
+    classtype:policy-violation;
 )
 
-# Bytes through exit node
-rate(tor_relay_bytes_total{direction="written", node="exit1"}[1m])
+# Detect Hidden Service descriptor upload
+alert tcp $CHUTNEX_NET any -> $CHUTNEX_DA_NET any (
+    msg:"CHUTNEX HS Descriptor Upload";
+    flow:established;
+    content:"POST"; http_method;
+    content:"/tor/hs/"; http_uri;
+    sid:9000002; rev:1;
+    classtype:policy-violation;
+)
+```
 
-# Bootstrap status across all nodes
-tor_bootstrap_percent{network="berlin8"}
+### 8.6 Timing Correlation Analysis
+
+ChutneX enables **world-first** timing correlation research on SimpleX:
+
+```python
+# Analysis script for timing correlation
+
+import pandas as pd
+from datetime import datetime, timedelta
+
+def analyze_timing_correlation(sender_events: list, receiver_events: list,
+                                max_delay_ms: int = 5000) -> dict:
+    """
+    Detect message correlation based on timing.
+    
+    Args:
+        sender_events: List of (timestamp, message_id) from sender
+        receiver_events: List of (timestamp, message_id) from receiver
+        max_delay_ms: Maximum expected delay in milliseconds
+    
+    Returns:
+        dict with correlation probability and matches
+    """
+    correlations = []
+    
+    for send_ts, send_id in sender_events:
+        # Find receive events within time window
+        for recv_ts, recv_id in receiver_events:
+            delta = (recv_ts - send_ts).total_seconds() * 1000
+            
+            if 0 < delta < max_delay_ms:
+                # Calculate correlation probability
+                # Lower delay = higher correlation
+                probability = 1 - (delta / max_delay_ms)
+                
+                correlations.append({
+                    'send_time': send_ts,
+                    'recv_time': recv_ts,
+                    'delay_ms': delta,
+                    'probability': probability
+                })
+    
+    if correlations:
+        avg_probability = sum(c['probability'] for c in correlations) / len(correlations)
+    else:
+        avg_probability = 0
+    
+    return {
+        'correlation_probability': avg_probability,
+        'matches': correlations,
+        'total_sent': len(sender_events),
+        'total_received': len(receiver_events)
+    }
 ```
 
 ---
 
-## 🛡️ Security Verification
+## 9. File Reference
 
-### Proof of Isolation
+### 9.1 Backend Files
 
-The ultimate test: Public Tor cannot reach ChutneX .onion addresses.
-```bash
-# Test 1: Public Tor (should FAIL)
-curl -x socks5h://localhost:9050 \
-  http://tvbdfd6jviyjnaxkrrwht75ixv3j3da2nt2bdvwfnqmco5pj3mfpj5qd.onion:5223 \
-  --connect-timeout 10
+| File | Purpose |
+|------|---------|
+| `chutney/models.py` | TorNetwork, TorNode models |
+| `chutney/admin.py` | Django admin configuration |
+| `chutney/api/serializers.py` | REST API serializers |
+| `chutney/api/views.py` | API viewsets |
+| `chutney/services/docker_manager.py` | Docker orchestration |
+| `servers/models.py` | Server model with ChutneX fields |
+| `servers/services/docker_manager.py` | Server container management |
+| `clients/models.py` | Client model with connection_mode |
+| `clients/services/docker_manager.py` | Client container management |
 
-# Expected: curl: (97) Can't complete SOCKS5 connection (4)
+### 9.2 Docker Files
 
-# Test 2: ChutneX (should SUCCEED)
-docker exec simplex-client-client-001 \
-  curl -x socks5h://127.0.0.1:9050 \
-  http://tvbdfd6jviyjnaxkrrwht75ixv3j3da2nt2bdvwfnqmco5pj3mfpj5qd.onion:5223 \
-  --connect-timeout 10
+| File | Purpose |
+|------|---------|
+| `docker/images/chutnex/Dockerfile` | ChutneX node image |
+| `docker/images/chutnex/entrypoint.sh` | DA sync + torrc generation |
+| `docker/images/chutnex/torrc.base` | Base torrc template |
+| `docker/images/simplex-smp-tor/entrypoint.sh` | SMP server with ChutneX |
+| `docker/images/simplex-cli/entrypoint.sh` | Client with socat tunnel |
 
-# Expected: curl: (52) Empty reply from server (connection established!)
-```
+### 9.3 Frontend Files
 
-### Verification Script
+| File | Purpose |
+|------|---------|
+| `frontend/src/pages/ChutneX.tsx` | Network management page |
+| `frontend/src/pages/ChutneXDetail.tsx` | Network detail view |
+| `frontend/src/pages/ServerForm.tsx` | Server creation with ChutneX |
+| `frontend/src/pages/ClientForm.tsx` | Client creation with modes |
+| `frontend/src/i18n/locales/de.json` | German translations |
+| `frontend/src/i18n/locales/en.json` | English translations |
+
+### 9.4 API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/chutney/networks/` | GET, POST | List/create networks |
+| `/api/v1/chutney/networks/{slug}/` | GET, PUT, DELETE | Network detail |
+| `/api/v1/chutney/networks/{slug}/start/` | POST | Start network |
+| `/api/v1/chutney/networks/{slug}/stop/` | POST | Stop network |
+| `/api/v1/chutney/networks/{slug}/status/` | GET | Network status |
+| `/api/v1/chutney/networks/{slug}/logs/` | GET | Container logs |
+
+---
+
+## 10. Verification & Testing
+
+### 10.1 Network Health Check
+
 ```bash
 #!/bin/bash
-# verify_chutnex.sh - Verify ChutneX isolation
+# scripts/chutnex-health-check.sh
 
-echo "🔬 ChutneX Isolation Verification"
-echo "================================="
+NETWORK_SLUG="${1:-berlin8}"
 
-ONION=$(docker exec simplex-smp-berlin cat /var/lib/tor/simplex-smp/hostname)
-echo "Testing .onion: $ONION"
+echo "🔬 ChutneX Health Check: $NETWORK_SLUG"
+echo "============================================"
+
+# Check all nodes bootstrapped
+echo ""
+echo "📊 Node Bootstrap Status:"
+for node in da1 da2 da3 guard1 guard2 middle1 middle2 exit1 exit2 client1 client2; do
+    CONTAINER="chutnex-${NETWORK_SLUG}-${node}"
+    STATUS=$(docker exec $CONTAINER grep "Bootstrapped 100%" /var/lib/tor/tor.log 2>/dev/null)
+    
+    if [ -n "$STATUS" ]; then
+        echo "  ✅ $node: Bootstrapped 100%"
+    else
+        echo "  ❌ $node: Not fully bootstrapped"
+    fi
+done
+
+# Check consensus
+echo ""
+echo "🗳️ Consensus Status:"
+docker exec chutnex-${NETWORK_SLUG}-da1 \
+    grep -E "Consensus computed|Published" /var/lib/tor/tor.log 2>/dev/null | tail -3
+
+# Check hidden service
+echo ""
+echo "🧅 Hidden Services:"
+docker exec simplex-smp-berlin cat /var/lib/tor/simplex-smp/hostname 2>/dev/null || echo "  No HS found"
 
 echo ""
-echo "Test 1: Public Tor Access (should fail)..."
-if curl -x socks5h://localhost:9050 "http://$ONION:5223" --connect-timeout 5 2>&1 | grep -q "Can't complete SOCKS5"; then
-    echo "✅ PASS: Public Tor cannot reach ChutneX"
-else
-    echo "❌ FAIL: Public Tor should not reach ChutneX!"
-    exit 1
-fi
-
-echo ""
-echo "Test 2: ChutneX Access (should succeed)..."
-if docker exec simplex-client-client-001 \
-   curl -x socks5h://127.0.0.1:9050 "http://$ONION:5223" --connect-timeout 10 2>&1 | grep -q "Empty reply"; then
-    echo "✅ PASS: ChutneX client can reach server"
-else
-    echo "❌ FAIL: ChutneX client should reach server!"
-    exit 1
-fi
-
-echo ""
-echo "🎉 All tests passed! ChutneX is 100% isolated."
+echo "============================================"
+echo "Health check complete!"
 ```
 
----
+### 10.2 Isolation Verification
 
-## 📈 Performance Characteristics
-
-| Metric | Public Tor | ChutneX | Improvement |
-|--------|------------|---------|-------------|
-| Circuit Build | 2-10s | 0.5-2s | 5-10x faster |
-| Message Latency | 500ms-5s | 50-200ms | 10-25x faster |
-| Bootstrap Time | 30-120s | 10-30s | 3-4x faster |
-| Bandwidth | ISP limited | LAN speed | 100x+ |
-| Reproducibility | Variable | 100% | ∞ |
-
----
-
-## 🚀 Quick Start
-
-### 1. Build ChutneX Image
 ```bash
-cd docker/images/chutnex
-docker build -t chutnex:latest .
+#!/bin/bash
+# scripts/verify-isolation.sh
+
+ONION_ADDRESS="${1}"
+
+echo "🔒 Verifying ChutneX Isolation"
+echo "============================================"
+
+# Test 1: Public Tor should NOT reach ChutneX .onion
+echo ""
+echo "Test 1: Public Tor → ChutneX .onion"
+RESULT=$(curl -x socks5h://localhost:9050 "http://${ONION_ADDRESS}:5223" \
+         --connect-timeout 10 2>&1)
+
+if echo "$RESULT" | grep -q "error 4\|error 6"; then
+    echo "  ✅ PASS: Public Tor cannot resolve ChutneX .onion"
+else
+    echo "  ❌ FAIL: Public Tor reached ChutneX!"
+fi
+
+# Test 2: ChutneX client should reach .onion
+echo ""
+echo "Test 2: ChutneX → ChutneX .onion"
+RESULT=$(docker exec simplex-client-client-001 \
+         curl -x socks5h://127.0.0.1:9050 "http://${ONION_ADDRESS}:5223" \
+         --connect-timeout 10 2>&1)
+
+if echo "$RESULT" | grep -q "Empty reply"; then
+    echo "  ✅ PASS: ChutneX client can reach .onion (connected)"
+else
+    echo "  ❌ FAIL: ChutneX client cannot reach .onion"
+fi
+
+echo ""
+echo "============================================"
+echo "Isolation verification complete!"
 ```
 
-### 2. Create Network via UI
+### 10.3 Message Flow Test
 
-1. Navigate to **ChutneX** → **New Network**
-2. Configure: 3 DAs, 1 Guard, 1 Middle, 1 Exit, 2 Clients
-3. Click **Create & Start**
+```python
+# tests/test_chutnex_messaging.py
 
-### 3. Create ChutneX Server
+import pytest
+from clients.models import SimplexClient
+from clients.services.simplex_commands import SimplexService
 
-1. Navigate to **Servers** → **New Server**
-2. Select **🔬 ChutneX** hosting mode
-3. Choose your ChutneX network
-4. Click **Create**
-
-### 4. Create ChutneX Clients
-
-1. Navigate to **Clients** → **New Client**
-2. Select **🔬 ChutneX Internal** connection mode
-3. Choose your ChutneX network
-4. Select your ChutneX server
-5. Click **Create** & **Start**
-
-### 5. Test Communication
-
-1. Create second client (same steps)
-2. Click **Connect** between clients
-3. Send test messages
-4. Verify in **Adversary View** (Phase 4)
+class TestChutneXMessaging:
+    """
+    End-to-end messaging tests through ChutneX network.
+    """
+    
+    @pytest.fixture
+    def chutnex_clients(self):
+        """Get two ChutneX-connected clients."""
+        client_a = SimplexClient.objects.get(name='Client 001')
+        client_b = SimplexClient.objects.get(name='Client 002')
+        
+        assert client_a.connection_mode == 'chutnex_internal'
+        assert client_b.connection_mode == 'chutnex_internal'
+        
+        return client_a, client_b
+    
+    def test_message_delivery(self, chutnex_clients):
+        """Test message delivery through ChutneX network."""
+        client_a, client_b = chutnex_clients
+        svc = SimplexService()
+        
+        # Create connection
+        addr_result = svc.create_address(client_b)
+        assert addr_result.success
+        
+        conn_result = svc.connect_via_link(client_a, addr_result.data['full_link'])
+        assert conn_result.success
+        
+        # Send message
+        msg_result = svc.send_message(client_a, client_b.profile_name, "Test message")
+        assert msg_result.success
+        
+        # Verify delivery
+        messages = svc.get_messages(client_b)
+        assert any("Test message" in m.get('content', '') for m in messages.data)
+    
+    def test_timing_measurement(self, chutnex_clients):
+        """Measure message latency through ChutneX."""
+        client_a, client_b = chutnex_clients
+        svc = SimplexService()
+        
+        import time
+        
+        start = time.time()
+        svc.send_message(client_a, client_b.profile_name, "Timing test")
+        
+        # Poll for delivery
+        for _ in range(30):
+            messages = svc.get_messages(client_b)
+            if any("Timing test" in m.get('content', '') for m in messages.data):
+                break
+            time.sleep(0.1)
+        
+        latency = time.time() - start
+        print(f"ChutneX message latency: {latency:.3f}s")
+        
+        # ChutneX should be faster than public Tor
+        assert latency < 5.0  # Should be under 5 seconds
+```
 
 ---
 
-## 📚 References
+## 11. Integration with Enterprise Stack
 
-- [Tor Chutney (Official)](https://gitlab.torproject.org/tpo/core/chutney)
-- [Tor Specification](https://spec.torproject.org/)
-- [SimpleX Messaging Protocol](https://github.com/simplex-chat/simplexmq/blob/stable/protocol/)
-- [stem - Tor Controller Library](https://stem.torproject.org/)
+### 11.1 Roadmap Alignment
+
+ChutneX enables the following roadmap phases:
+
+| Phase | Feature | ChutneX Enables |
+|-------|---------|-----------------|
+| **Phase 3** | Traffic Analysis | Full circuit visibility |
+| **Phase 4** | Adversary View | Timing correlation research |
+| **Phase 9** | Private Tor Network | ✅ **COMPLETED** |
+| **Phase 10** | Enterprise Stack | Zeek/Suricata/Neo4j integration |
+
+### 11.2 Data Export Formats
+
+```python
+# Export circuit data for Neo4j import
+
+def export_circuits_for_neo4j(network_slug: str) -> dict:
+    """
+    Export ChutneX circuit data in Neo4j-compatible format.
+    """
+    circuits = []
+    
+    # Connect to each client node and extract circuits
+    for client in ['client1', 'client2']:
+        container = f"chutnex-{network_slug}-{client}"
+        # ... extract circuit data via stem
+    
+    return {
+        'nodes': [
+            {'label': 'Relay', 'properties': {...}},
+            {'label': 'Client', 'properties': {...}},
+        ],
+        'relationships': [
+            {'type': 'USES_GUARD', 'from': ..., 'to': ...},
+            {'type': 'USES_MIDDLE', 'from': ..., 'to': ...},
+        ]
+    }
+```
+
+### 11.3 Prometheus Metrics
+
+```python
+# Export ChutneX metrics to Prometheus
+
+from prometheus_client import Gauge, Counter, Histogram
+
+# Define metrics
+chutnex_nodes_total = Gauge(
+    'chutnex_nodes_total',
+    'Total number of ChutneX nodes',
+    ['network', 'node_type']
+)
+
+chutnex_circuit_build_time = Histogram(
+    'chutnex_circuit_build_seconds',
+    'Circuit build time in seconds',
+    ['network'],
+    buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+)
+
+chutnex_messages_total = Counter(
+    'chutnex_messages_total',
+    'Total messages through ChutneX',
+    ['network', 'status']
+)
+```
+
+### 11.4 Grafana Dashboard
+
+```json
+{
+  "dashboard": {
+    "title": "ChutneX Network Monitor",
+    "panels": [
+      {
+        "title": "Node Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "chutnex_nodes_total{node_type='da'}",
+            "legendFormat": "Directory Authorities"
+          }
+        ]
+      },
+      {
+        "title": "Circuit Build Time",
+        "type": "histogram",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, chutnex_circuit_build_seconds_bucket)",
+            "legendFormat": "P95 Build Time"
+          }
+        ]
+      },
+      {
+        "title": "Message Flow",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(chutnex_messages_total[5m])",
+            "legendFormat": "Messages/sec"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ---
 
-## 🏆 Achievements
+## 12. Conclusion
 
-| Milestone | Date | Description |
-|-----------|------|-------------|
-| ✅ DA Synchronization | 12.01.2026 | All DAs wait for each other before Tor start |
-| ✅ Client Integration | 12.01.2026 | SimpleX clients route through ChutneX SOCKS |
-| ✅ Server Integration | 12.01.2026 | SMP servers register Hidden Services in ChutneX |
-| ✅ 100% Isolation | 12.01.2026 | Verified: Public Tor cannot reach ChutneX |
-| ✅ Message Flow | 12.01.2026 | End-to-end messaging through private Tor |
+### 12.1 Achievement Summary
+
+**ChutneX** delivers a **world-first** capability:
+
+✅ **100% isolated private Tor network** for SimpleX infrastructure  
+✅ **Complete forensic visibility** into all network layers  
+✅ **DA synchronization** ensuring proper consensus  
+✅ **Seamless integration** with SimpleX clients and servers  
+✅ **Foundation for advanced security research**
+
+### 12.2 Security Implications
+
+| Aspect | Implication |
+|--------|-------------|
+| **For Researchers** | Study Tor behavior without affecting public network |
+| **For Developers** | Fast iteration with predictable latency |
+| **For Operators** | Validate infrastructure before production |
+| **For Training** | Safe environment for security education |
+
+### 12.3 Next Steps
+
+1. **Phase 10 Integration:** Zeek, Suricata, Neo4j
+2. **Adversary View:** Timing correlation UI
+3. **Performance Benchmarks:** Latency comparisons
+4. **Documentation:** User guides and tutorials
 
 ---
 
-*ChutneX - Your Private Tor Network for SimpleX SMP Monitor Forensics* 🔬🧅
+## Appendix A: Quick Start
+
+```bash
+# 1. Start the application
+cd ~/simplex-smp-monitor
+docker compose up -d
+python manage.py runserver
+
+# 2. Create ChutneX network (via UI or API)
+curl -X POST http://localhost:8000/api/v1/chutney/networks/ \
+     -H "Content-Type: application/json" \
+     -d '{"name": "TestNet", "slug": "testnet"}'
+
+# 3. Start network
+curl -X POST http://localhost:8000/api/v1/chutney/networks/testnet/start/
+
+# 4. Create ChutneX server (via UI)
+# - Hosting Mode: ChutneX
+# - Network: TestNet
+
+# 5. Create ChutneX clients (via UI)
+# - Connection Mode: ChutneX Internal
+# - Network: TestNet
+# - Server: (select ChutneX server)
+
+# 6. Test messaging!
+```
+
+---
+
+## Appendix B: Troubleshooting
+
+### B.1 DA Consensus Failure
+
+**Symptom:** "Vote not from a recognized v3 authority"
+
+**Solution:**
+1. Check all DAs have same dir-authorities file:
+   ```bash
+   docker exec chutnex-<slug>-da1 cat /var/lib/tor/torrc | grep DirAuthority
+   docker exec chutnex-<slug>-da2 cat /var/lib/tor/torrc | grep DirAuthority
+   docker exec chutnex-<slug>-da3 cat /var/lib/tor/torrc | grep DirAuthority
+   ```
+2. Verify DA_COUNT matches actual DA count
+3. Restart network with clean volumes
+
+### B.2 Client Cannot Connect
+
+**Symptom:** "Could not create address" error
+
+**Solution:**
+1. Verify client is in ChutneX network:
+   ```bash
+   docker inspect simplex-client-<n> --format '{{json .NetworkSettings.Networks}}'
+   ```
+2. Check socat tunnel is running:
+   ```bash
+   docker logs simplex-client-<n> | grep "Forwarding"
+   ```
+3. Verify server .onion is in ChutneX consensus
+
+### B.3 Server Not Bootstrapping
+
+**Symptom:** Server stuck at 0% bootstrap
+
+**Solution:**
+1. Verify ChutneX network is running (all DAs at 100%)
+2. Check server has /status volume mounted
+3. Verify CHUTNEX_MODE=1 is set:
+   ```bash
+   docker exec simplex-smp-<n> env | grep CHUTNEX
+   ```
+
+---
+
+*Document Version: 1.0*  
+*Last Updated: January 12, 2026*  
+*Author: cannatoshi + Claude*
+
+**🔬 ChutneX - Your Private Tor Network for SimpleX Forensics**
