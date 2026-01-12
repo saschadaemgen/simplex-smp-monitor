@@ -9,7 +9,8 @@
     "metrics": "Metrics",
     "events": "Events",
     "music": "Music",
-    "chutney": "ChutneX"
+    "chutney": "ChutneX",
+    "docker": "Docker"
   },
   "music": {
     "title": "Music Player",
@@ -83,7 +84,9 @@
     "yes": "Yes",
     "no": "No",
     "back": "Back",
-    "testPanel": "Test Panel"
+    "testPanel": "Test Panel",
+    "close": "Close",
+    "retry": "Retry"
   },
   "status": {
     "online": "Online",
@@ -282,6 +285,48 @@
       "viewLogs": "View Logs"
     }
   },
+  "docker": {
+    "title": "Docker Manager",
+    "subtitle": "Monitor and manage all Docker containers",
+    "connectionError": "Docker Connection Error",
+    "noContainers": "No Containers Found",
+    "noContainersDesc": "No containers match your current filters",
+    "searchPlaceholder": "Search containers...",
+    "filter": {
+      "all": "All",
+      "running": "Running",
+      "exited": "Stopped",
+      "paused": "Paused"
+    },
+    "running": "Running",
+    "stopped": "Stopped",
+    "paused": "Paused",
+    "images": "Images",
+    "cpus": "CPUs",
+    "memory": "Memory",
+    "image": "Image",
+    "ports": "Ports",
+    "uptime": "Uptime",
+    "selected": "selected",
+    "start": "Start",
+    "stop": "Stop",
+    "restart": "Restart",
+    "kill": "Kill",
+    "pause": "Pause",
+    "unpause": "Unpause",
+    "remove": "Remove",
+    "logs": "Logs",
+    "logsFor": "Logs for",
+    "noLogs": "No logs available",
+    "prune": "Prune Stopped",
+    "startAll": "Start All",
+    "stopAll": "Stop All",
+    "removeAll": "Remove All",
+    "confirmRemove": "Are you sure you want to remove this container?",
+    "confirmBulkAction": "Are you sure you want to {{action}} {{count}} containers?",
+    "confirmPrune": "Are you sure you want to remove all stopped containers?",
+    "pruneSuccess": "Successfully removed {{count}} containers"
+  },
   "events": {
     "title": "Events",
     "subtitle": "System Event Log",
@@ -457,14 +502,14 @@
     "version": "0.1.12-alpha"
   },
   "hostingModes": {
-  "title": "Hosting Mode",
-  "external": "External",
-  "externalDesc": "ClearNet or Onion",
-  "ip": "Docker LAN",
-  "ipDesc": "Local network only",
-  "tor": "Docker Onion",
-  "torDesc": "Via public Tor",
-  "chutnex": "ChutneX",
-  "chutnexDesc": "Private Tor network"
-}
+    "title": "Hosting Mode",
+    "external": "External",
+    "externalDesc": "ClearNet or Onion",
+    "ip": "Docker LAN",
+    "ipDesc": "Local network only",
+    "tor": "Docker Onion",
+    "torDesc": "Via public Tor",
+    "chutnex": "ChutneX",
+    "chutnexDesc": "Private Tor network"
+  }
 }

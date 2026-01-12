@@ -36,6 +36,7 @@ services:
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,nginx}
       - DATABASE_URL=postgres://${POSTGRES_USER:-simplex}:${POSTGRES_PASSWORD:-simplex123}@postgres:5432/${POSTGRES_DB:-simplex_monitor}
       - REDIS_URL=redis://redis:6379/0
+      - RUNNING_IN_DOCKER=true
       - INFLUXDB_URL=http://influxdb:8086
       - INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-simplex-monitor-token}
       - INFLUXDB_ORG=${INFLUXDB_ORG:-simplex}

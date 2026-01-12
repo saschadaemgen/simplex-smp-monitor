@@ -29,6 +29,9 @@ urlpatterns = [
     path('api/v1/', include('clients.api.urls')),
     path('api/v1/dashboard/', include('dashboard.api.urls')),
     
+    # Docker Manager API
+    path('api/v1/docker/', include('docker_manager.api.urls')),
+    
     # Music Player API
     path('', include('music_player.urls')),
     

@@ -223,7 +223,10 @@ class SimplexClient(models.Model):
     
     @property
     def websocket_url(self):
-        """WebSocket URL - immer localhost da Django auf dem Host läuft"""
+        """WebSocket URL - Container-Name wenn in Docker, sonst localhost"""
+        import os
+        if os.environ.get('RUNNING_IN_DOCKER'):
+            return f"ws://simplex-client-{self.slug}:{self.websocket_port}"
         return f"ws://localhost:{self.websocket_port}"
     
     @property

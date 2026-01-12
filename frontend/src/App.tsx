@@ -17,6 +17,7 @@ import TorNetworks from './pages/TorNetworks';
 import TorNetworkDetail from './pages/TorNetworkDetail';
 import TorNetworkForm from './pages/TorNetworkForm';
 import { VideoWidgetProvider } from './contexts/VideoWidgetContext';
+import Docker from './pages/Docker';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
         <Route path="tor-networks/new" element={<TorNetworkForm />} />
         <Route path="tor-networks/:id" element={<TorNetworkDetail />} />
         <Route path="tor-networks/:id/edit" element={<TorNetworkForm />} />
+        <Route path="/docker" element={<Docker />} />
       </Route>
     </Routes>
     </VideoWidgetProvider>

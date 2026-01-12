@@ -10,7 +10,8 @@
  * - API client functions for all endpoints
  * - Dashboard, Servers, Categories, Tests, Events
  * - SimpleX Clients with latency history and reset actions
- * - Docker hosting support for servers (NEW in v0.1.12)
+ * - Docker hosting support for servers (v0.1.12)
+ * - Docker Manager for container management (v0.1.13)
  */
 
 const API_BASE = '/api/v1';
@@ -508,6 +509,135 @@ export interface ResetResponse {
 }
 
 // =============================================================================
+// DOCKER MANAGER TYPES (v0.1.13 - Container Management)
+// =============================================================================
+
+export interface DockerManagerInfo {
+  containers_running: number;
+  containers_paused: number;
+  containers_stopped: number;
+  containers_total: number;
+  images_total: number;
+  docker_version: string;
+  os: string;
+  architecture: string;
+  memory_total: number;
+  cpus: number;
+  kernel_version: string;
+}
+
+export interface ContainerPort {
+  container_port: string;
+  host_bindings: Array<{
+    host_ip: string;
+    host_port: string;
+  }>;
+}
+
+export interface ContainerState {
+  running: boolean;
+  paused: boolean;
+  restarting: boolean;
+  oom_killed: boolean;
+  dead: boolean;
+  exit_code: number;
+  error: string;
+  started_at: string;
+  finished_at: string;
+}
+
+export interface DockerManagedContainer {
+  id: string;
+  short_id: string;
+  name: string;
+  status: string;
+  image: string;
+  created: string;
+  ports: ContainerPort[];
+  state: ContainerState;
+  health?: {
+    status: string;
+    failing_streak: number;
+  };
+  host_config?: {
+    memory_limit: number;
+    cpu_shares: number;
+    restart_policy: string;
+    network_mode: string;
+  };
+  networks?: Record<string, {
+    ip_address: string;
+    gateway: string;
+  }>;
+  mounts?: Array<{
+    type: string;
+    source: string;
+    destination: string;
+    mode: string;
+  }>;
+  labels?: Record<string, string>;
+}
+
+export interface ContainerStats {
+  container_id: string;
+  name?: string;
+  cpu_percent: number;
+  memory_usage: number;
+  memory_limit: number;
+  memory_percent: number;
+  network_rx: number;
+  network_tx: number;
+  block_read: number;
+  block_write: number;
+  timestamp: string;
+  status?: string;
+}
+
+export interface ContainerListResponse {
+  containers: DockerManagedContainer[];
+  stats: {
+    total: number;
+    running: number;
+    stopped: number;
+    paused: number;
+    other: number;
+  };
+  docker_connected: boolean;
+}
+
+export interface ContainerActionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  container_id?: string;
+  status?: string;
+}
+
+export interface ContainerLogsResponse {
+  container_id: string;
+  logs: string;
+  tail: number;
+}
+
+export interface PruneResult {
+  success: boolean;
+  containers_deleted: string[];
+  space_reclaimed: number;
+}
+
+export interface BulkActionResult {
+  results: Array<{
+    container_id: string;
+    success: boolean;
+    message?: string;
+    error?: string;
+  }>;
+  total: number;
+  success: number;
+  failed: number;
+}
+
+// =============================================================================
 // DASHBOARD API
 // =============================================================================
 
@@ -759,5 +889,110 @@ export const messagesApi = {
   delete: (id: string) => apiFetch<{ success: boolean; message: string; deleted_id: string }>(`/messages/${id}/`, {
     method: 'DELETE',
     headers: { 'X-CSRFToken': getCsrfToken() },
+  }),
+};
+
+// =============================================================================
+// DOCKER MANAGER API (v0.1.13 - Full Container Management)
+// =============================================================================
+
+const DOCKER_API_BASE = '/api/v1/docker';
+
+export const dockerApi = {
+  /**
+   * Get Docker daemon information
+   */
+  info: () => apiFetch<DockerManagerInfo>(`${DOCKER_API_BASE}/info/`.replace(API_BASE, '')),
+
+  /**
+   * List all containers
+   */
+  list: (options?: {
+    all?: boolean;
+    status?: string;
+    name?: string;
+    sort?: string;
+    order?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (options?.all !== undefined) params.append('all', String(options.all));
+    if (options?.status) params.append('status', options.status);
+    if (options?.name) params.append('name', options.name);
+    if (options?.sort) params.append('sort', options.sort);
+    if (options?.order) params.append('order', options.order);
+    const query = params.toString();
+    return apiFetch<ContainerListResponse>(`${DOCKER_API_BASE}/containers/${query ? '?' + query : ''}`.replace(API_BASE, ''));
+  },
+
+  /**
+   * Get container details
+   */
+  get: (containerId: string) => 
+    apiFetch<DockerManagedContainer>(`${DOCKER_API_BASE}/containers/${containerId}/`.replace(API_BASE, '')),
+
+  /**
+   * Get container stats
+   */
+  stats: (containerId: string) => 
+    apiFetch<ContainerStats>(`${DOCKER_API_BASE}/containers/${containerId}/stats/`.replace(API_BASE, '')),
+
+  /**
+   * Get stats for all running containers
+   */
+  allStats: () => 
+    apiFetch<{ stats: ContainerStats[]; count: number }>(`${DOCKER_API_BASE}/containers/stats/`.replace(API_BASE, '')),
+
+  /**
+   * Get container logs
+   */
+  logs: (containerId: string, tail: number = 100) => 
+    apiFetch<ContainerLogsResponse>(`${DOCKER_API_BASE}/containers/${containerId}/logs/?tail=${tail}`.replace(API_BASE, '')),
+
+  /**
+   * Execute container action (start, stop, restart, kill, pause, unpause)
+   */
+  action: (
+    containerId: string, 
+    action: 'start' | 'stop' | 'restart' | 'kill' | 'pause' | 'unpause',
+    options?: { timeout?: number; signal?: string }
+  ) => apiFetch<ContainerActionResult>(`${DOCKER_API_BASE}/containers/${containerId}/${action}/`.replace(API_BASE, ''), {
+    method: 'POST',
+    body: JSON.stringify(options || {}),
+  }),
+
+  /**
+   * Remove a container
+   */
+  remove: (containerId: string, force: boolean = false, volumes: boolean = false) => {
+    const params = new URLSearchParams();
+    if (force) params.append('force', 'true');
+    if (volumes) params.append('volumes', 'true');
+    return apiFetch<ContainerActionResult>(
+      `${DOCKER_API_BASE}/containers/${containerId}/?${params.toString()}`.replace(API_BASE, ''),
+      { method: 'DELETE' }
+    );
+  },
+
+  /**
+   * Prune stopped containers
+   */
+  prune: () => apiFetch<PruneResult>(`${DOCKER_API_BASE}/containers/prune/`.replace(API_BASE, ''), {
+    method: 'POST',
+  }),
+
+  /**
+   * Bulk action on multiple containers
+   */
+  bulk: (
+    containerIds: string[], 
+    action: 'start' | 'stop' | 'restart' | 'kill' | 'remove',
+    force: boolean = false
+  ) => apiFetch<BulkActionResult>(`${DOCKER_API_BASE}/containers/bulk/`.replace(API_BASE, ''), {
+    method: 'POST',
+    body: JSON.stringify({
+      container_ids: containerIds,
+      action,
+      force,
+    }),
   }),
 };

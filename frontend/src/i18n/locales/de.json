@@ -9,7 +9,8 @@
     "metrics": "Metriken",
     "events": "Events",
     "music": "Musik",
-    "chutney": "ChutneX"
+    "chutney": "ChutneX",
+    "docker": "Docker"
   },
   "music": {
     "title": "Musik Player",
@@ -83,7 +84,9 @@
     "yes": "Ja",
     "no": "Nein",
     "back": "Zurück",
-    "testPanel": "Test Panel"
+    "testPanel": "Test Panel",
+    "close": "Schließen",
+    "retry": "Erneut versuchen"
   },
   "status": {
     "online": "Online",
@@ -282,6 +285,48 @@
       "viewLogs": "Logs anzeigen"
     }
   },
+  "docker": {
+    "title": "Docker Manager",
+    "subtitle": "Überwache und verwalte alle Docker Container",
+    "connectionError": "Docker Verbindungsfehler",
+    "noContainers": "Keine Container gefunden",
+    "noContainersDesc": "Keine Container entsprechen deinen Filterkriterien",
+    "searchPlaceholder": "Container suchen...",
+    "filter": {
+      "all": "Alle",
+      "running": "Laufend",
+      "exited": "Gestoppt",
+      "paused": "Pausiert"
+    },
+    "running": "Laufend",
+    "stopped": "Gestoppt",
+    "paused": "Pausiert",
+    "images": "Images",
+    "cpus": "CPUs",
+    "memory": "Speicher",
+    "image": "Image",
+    "ports": "Ports",
+    "uptime": "Laufzeit",
+    "selected": "ausgewählt",
+    "start": "Starten",
+    "stop": "Stoppen",
+    "restart": "Neustarten",
+    "kill": "Beenden",
+    "pause": "Pausieren",
+    "unpause": "Fortsetzen",
+    "remove": "Entfernen",
+    "logs": "Logs",
+    "logsFor": "Logs für",
+    "noLogs": "Keine Logs verfügbar",
+    "prune": "Gestoppte löschen",
+    "startAll": "Alle starten",
+    "stopAll": "Alle stoppen",
+    "removeAll": "Alle entfernen",
+    "confirmRemove": "Möchtest du diesen Container wirklich entfernen?",
+    "confirmBulkAction": "Möchtest du wirklich {{count}} Container {{action}}?",
+    "confirmPrune": "Möchtest du wirklich alle gestoppten Container entfernen?",
+    "pruneSuccess": "{{count}} Container erfolgreich entfernt"
+  },
   "events": {
     "title": "Events",
     "subtitle": "System Event Log",
@@ -457,14 +502,14 @@
     "version": "0.1.12-alpha"
   },
   "hostingModes": {
-  "title": "Hosting Modus",
-  "external": "Extern",
-  "externalDesc": "ClearNet oder Onion",
-  "ip": "Docker LAN",
-  "ipDesc": "Nur im lokalen Netzwerk",
-  "tor": "Docker Onion",
-  "torDesc": "Über öffentliches Tor",
-  "chutnex": "ChutneX",
-  "chutnexDesc": "Privates Tor-Netzwerk"
-}
+    "title": "Hosting Modus",
+    "external": "Extern",
+    "externalDesc": "ClearNet oder Onion",
+    "ip": "Docker LAN",
+    "ipDesc": "Nur im lokalen Netzwerk",
+    "tor": "Docker Onion",
+    "torDesc": "Über öffentliches Tor",
+    "chutnex": "ChutneX",
+    "chutnexDesc": "Privates Tor-Netzwerk"
+  }
 }

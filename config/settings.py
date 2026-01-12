@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'clients',
     'music_player',
     'chutney',
+    'docker_manager',
 ]
 
 MIDDLEWARE = [
