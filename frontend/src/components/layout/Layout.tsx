@@ -52,6 +52,11 @@ export default function Layout() {
     }
   }, [darkMode]);
 
+  // GitHub Link Handler
+  const handleFooterClick = () => {
+    window.open('https://github.com/cannatoshi/simplex-smp-monitor', '_blank', 'noopener,noreferrer');
+  };
+
   // Top Navigation Items
   const navItems = [
     { to: '/dashboard', label: t('nav.dashboard') },
@@ -181,14 +186,16 @@ export default function Layout() {
             <MiniPlayer />
           </div>
           
-          {/* Rotating Text (right side) */}
+          {/* Rotating Text (right side) - CLICKABLE */}
           <div 
-            className={`text-xs font-mono transition-all duration-300 ease-in-out flex-shrink-0 ml-4 ${
+            onClick={handleFooterClick}
+            className={`text-xs font-mono transition-all duration-300 ease-in-out flex-shrink-0 ml-4 cursor-pointer hover:opacity-80 ${
               isAnimating 
                 ? 'translate-x-8 opacity-0' 
                 : 'translate-x-0 opacity-100'
             }`}
             style={{ color: neonBlue }}
+            title="View on GitHub"
           >
             {footerItems[footerIndex]}
           </div>
