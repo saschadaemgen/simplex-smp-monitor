@@ -1,9 +1,10 @@
 /**
- * ChutneX Mega Menu - Professional, Centered, Responsive
- * ======================================================
+ * ChutneX Mega Menu - Professional, Centered, Responsive, i18n
+ * ============================================================
  * - Always centered
  * - Responsive grid (auto-fit columns)
- * - All existing components + placeholders for future
+ * - Full i18n support (DE/EN)
+ * - All existing components + placeholders
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
@@ -105,36 +106,6 @@ const styles = {
     marginBottom: '20px',
     borderBottom: '1px solid #1e293b',
   },
-  headerTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-  },
-  headerTextContainer: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '2px',
-  },
-  headerText: {
-    fontSize: '18px',
-    fontWeight: 700,
-    color: 'white',
-    letterSpacing: '-0.025em',
-  },
-  headerSubtitle: {
-    fontSize: '12px',
-    color: '#64748b',
-    fontWeight: 400,
-  },
-  liveBadge: {
-    fontSize: '9px',
-    fontWeight: 700,
-    padding: '3px 10px',
-    borderRadius: '4px',
-    backgroundColor: 'rgba(136, 206, 208, 0.2)',
-    color: '#88CED0',
-    letterSpacing: '0.05em',
-  },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 250px))',
@@ -143,9 +114,7 @@ const styles = {
     gap: '24px',
     justifyContent: 'center',
   },
-  category: {
-    minWidth: '180px',
-  },
+  category: { minWidth: '180px' },
   categoryHeader: {
     display: 'flex',
     alignItems: 'center',
@@ -175,17 +144,6 @@ const styles = {
     outline: 'none',
     background: 'transparent',
   },
-  menuItemHover: {
-    backgroundColor: 'rgba(136, 206, 208, 0.1)',
-  },
-  menuItemActive: {
-    backgroundColor: 'rgba(136, 206, 208, 0.15)',
-    color: NEON,
-  },
-  menuItemDisabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
   badge: {
     fontSize: '8px',
     fontWeight: 700,
@@ -193,200 +151,204 @@ const styles = {
     borderRadius: '3px',
     marginLeft: 'auto',
   },
-  badgeLive: {
-    backgroundColor: 'rgba(136, 206, 208, 0.3)',
-    color: '#88CED0',
-  },
-  badgeBeta: {
-    backgroundColor: 'rgba(168, 85, 247, 0.3)',
-    color: '#c084fc',
-  },
-  badgePro: {
-    backgroundColor: 'rgba(245, 158, 11, 0.3)',
-    color: '#fbbf24',
-  },
-  badgeSoon: {
-    backgroundColor: 'rgba(71, 85, 105, 0.5)',
-    color: '#94a3b8',
-  },
+  badgeLive: { backgroundColor: 'rgba(136, 206, 208, 0.3)', color: '#88CED0' },
+  badgeBeta: { backgroundColor: 'rgba(168, 85, 247, 0.3)', color: '#c084fc' },
+  badgePro: { backgroundColor: 'rgba(245, 158, 11, 0.3)', color: '#fbbf24' },
+  badgeSoon: { backgroundColor: 'rgba(71, 85, 105, 0.5)', color: '#94a3b8' },
+  badgeAlpha: { backgroundColor: 'rgba(136, 206, 208, 0.2)', color: '#88CED0' },
 };
 
 // ============================================================================
-// MENU DATA
+// TYPES
 // ============================================================================
 interface MenuItemData {
-  label: string;
+  labelKey: string;
+  fallback: string;
   to: string;
   icon: React.ReactNode;
-  badge?: 'LIVE' | 'BETA' | 'PRO' | 'SOON';
+  badge?: 'LIVE' | 'BETA' | 'PRO' | 'SOON' | 'ALPHA';
   disabled?: boolean;
 }
 
 interface CategoryData {
-  title: string;
+  titleKey: string;
+  fallback: string;
   icon: React.ReactNode;
   items: MenuItemData[];
 }
 
+// ============================================================================
+// MENU DATA with i18n keys
+// ============================================================================
 const getMenuData = (basePath: string, networkId?: string): CategoryData[] => [
   {
-    title: 'Overview',
+    titleKey: 'megaMenu.categories.overview',
+    fallback: 'Overview',
     icon: <Icon.Dashboard />,
     items: [
-      { label: 'Netzwerkliste', to: '/tor-networks', icon: <Icon.Topology />, badge: 'LIVE' },
-      { label: 'Netzwerk Details', to: networkId ? `/tor-networks/${networkId}` : '/tor-networks', icon: <Icon.Server />, badge: 'LIVE' },
-      { label: 'Analytics Dashboard', to: networkId ? `/tor-networks/${networkId}/analytics` : '/tor-networks', icon: <Icon.Stats />, badge: 'LIVE' },
-      { label: 'Neues Netzwerk', to: '/tor-networks/new', icon: <Icon.Config />, badge: 'LIVE' },
-      { label: 'Netzwerk bearbeiten', to: networkId ? `/tor-networks/${networkId}/edit` : '/tor-networks', icon: <Icon.Config />, badge: 'LIVE' },
-      { label: 'Health Monitor', to: '/coming-soon', icon: <Icon.Health />, badge: 'SOON', disabled: true },
-      { label: 'Activity Feed', to: '/coming-soon', icon: <Icon.Activity />, badge: 'SOON', disabled: true },
-      { label: 'System Status', to: '/coming-soon', icon: <Icon.Server />, badge: 'SOON', disabled: true },
-      { label: 'Quick Actions', to: '/coming-soon', icon: <Icon.Zap />, badge: 'SOON', disabled: true },
-      { label: 'Getting Started', to: '/coming-soon', icon: <Icon.Flag />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.networkList', fallback: 'Network List', to: '/tor-networks', icon: <Icon.Topology />, badge: 'LIVE' },
+      { labelKey: 'megaMenu.items.networkDetails', fallback: 'Network Details', to: networkId ? `/tor-networks/${networkId}` : '/tor-networks', icon: <Icon.Server />, badge: 'LIVE' },
+      { labelKey: 'megaMenu.items.analyticsDashboard', fallback: 'Analytics Dashboard', to: networkId ? `/tor-networks/${networkId}/analytics` : '/tor-networks', icon: <Icon.Stats />, badge: 'LIVE' },
+      { labelKey: 'megaMenu.items.newNetwork', fallback: 'New Network', to: '/tor-networks/new', icon: <Icon.Config />, badge: 'LIVE' },
+      { labelKey: 'megaMenu.items.editNetwork', fallback: 'Edit Network', to: networkId ? `/tor-networks/${networkId}/edit` : '/tor-networks', icon: <Icon.Config />, badge: 'LIVE' },
+      { labelKey: 'megaMenu.items.healthMonitor', fallback: 'Health Monitor', to: '/coming-soon', icon: <Icon.Health />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.activityFeed', fallback: 'Activity Feed', to: '/coming-soon', icon: <Icon.Activity />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.systemStatus', fallback: 'System Status', to: '/coming-soon', icon: <Icon.Server />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.quickActions', fallback: 'Quick Actions', to: '/coming-soon', icon: <Icon.Zap />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.gettingStarted', fallback: 'Getting Started', to: '/coming-soon', icon: <Icon.Flag />, badge: 'SOON', disabled: true },
     ],
   },
   {
-    title: 'Nodes',
+    titleKey: 'megaMenu.categories.nodes',
+    fallback: 'Nodes',
     icon: <Icon.Server />,
     items: [
-      { label: 'Node Grid', to: `${basePath}/nodes`, icon: <Icon.Grid />, badge: 'SOON', disabled: true },
-      { label: 'Node Detail Card', to: `${basePath}/nodes/detail`, icon: <Icon.Server />, badge: 'SOON', disabled: true },
-      { label: 'Node Bandwidth', to: `${basePath}/nodes/bandwidth`, icon: <Icon.Bandwidth />, badge: 'SOON', disabled: true },
-      { label: 'Node Flags', to: `${basePath}/nodes/flags`, icon: <Icon.Flag />, badge: 'SOON', disabled: true },
-      { label: 'Node Identity', to: `${basePath}/nodes/identity`, icon: <Icon.Key />, badge: 'SOON', disabled: true },
-      { label: 'Node Ports', to: `${basePath}/nodes/ports`, icon: <Icon.Share />, badge: 'SOON', disabled: true },
-      { label: 'Node Comparison', to: `${basePath}/nodes/compare`, icon: <Icon.BarChart />, badge: 'SOON', disabled: true },
-      { label: 'Node History', to: `${basePath}/nodes/history`, icon: <Icon.History />, badge: 'SOON', disabled: true },
-      { label: 'Node Search', to: `${basePath}/nodes/search`, icon: <Icon.Search />, badge: 'SOON', disabled: true },
-      { label: 'Node Export', to: `${basePath}/nodes/export`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.nodeGrid', fallback: 'Node Grid', to: `${basePath}/nodes`, icon: <Icon.Grid />, badge: 'ALPHA' },
+      { labelKey: 'megaMenu.items.nodeDetailCard', fallback: 'Node Detail Card', to: `${basePath}/nodes/detail`, icon: <Icon.Server />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.nodeBandwidth', fallback: 'Node Bandwidth', to: `${basePath}/nodes/bandwidth`, icon: <Icon.Bandwidth />, badge: 'ALPHA' },
+      { labelKey: 'megaMenu.items.nodeFlags', fallback: 'Node Flags', to: `${basePath}/nodes/flags`, icon: <Icon.Flag />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.nodeIdentity', fallback: 'Node Identity', to: `${basePath}/nodes/identity`, icon: <Icon.Key />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.nodePorts', fallback: 'Node Ports', to: `${basePath}/nodes/ports`, icon: <Icon.Share />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.nodeComparison', fallback: 'Node Comparison', to: `${basePath}/nodes/compare`, icon: <Icon.BarChart />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.nodeHistory', fallback: 'Node History', to: `${basePath}/nodes/history`, icon: <Icon.History />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.nodeSearch', fallback: 'Node Search', to: `${basePath}/nodes/search`, icon: <Icon.Search />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.nodeExport', fallback: 'Node Export', to: `${basePath}/nodes/export`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
     ],
   },
   {
-    title: 'Circuits',
+    titleKey: 'megaMenu.categories.circuits',
+    fallback: 'Circuits',
     icon: <Icon.GitBranch />,
     items: [
-      { label: 'Circuits List', to: `${basePath}/circuits`, icon: <Icon.List />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Card', to: `${basePath}/circuits/card`, icon: <Icon.GitBranch />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Path Viz', to: `${basePath}/circuits/path`, icon: <Icon.Route />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Stats', to: `${basePath}/circuits/stats`, icon: <Icon.Stats />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Filters', to: `${basePath}/circuits/filters`, icon: <Icon.Filter />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Event Log', to: `${basePath}/circuits/events`, icon: <Icon.Zap />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Builder', to: `${basePath}/circuits/builder`, icon: <Icon.Target />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Timeline', to: `${basePath}/circuits/timeline`, icon: <Icon.Clock />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Compare', to: `${basePath}/circuits/compare`, icon: <Icon.BarChart />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Export', to: `${basePath}/circuits/export`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitsList', fallback: 'Circuits List', to: `${basePath}/circuits`, icon: <Icon.List />, badge: 'ALPHA' },
+      { labelKey: 'megaMenu.items.circuitCard', fallback: 'Circuit Card', to: `${basePath}/circuits/card`, icon: <Icon.GitBranch />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitPathViz', fallback: 'Circuit Path Viz', to: `${basePath}/circuits/path`, icon: <Icon.Route />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitStats', fallback: 'Circuit Stats', to: `${basePath}/circuits/stats`, icon: <Icon.Stats />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitFilters', fallback: 'Circuit Filters', to: `${basePath}/circuits/filters`, icon: <Icon.Filter />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitEventLog', fallback: 'Circuit Event Log', to: `${basePath}/circuits/events`, icon: <Icon.Zap />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitBuilder', fallback: 'Circuit Builder', to: `${basePath}/circuits/builder`, icon: <Icon.Target />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitTimeline', fallback: 'Circuit Timeline', to: `${basePath}/circuits/timeline`, icon: <Icon.Clock />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitCompare', fallback: 'Circuit Compare', to: `${basePath}/circuits/compare`, icon: <Icon.BarChart />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitExport', fallback: 'Circuit Export', to: `${basePath}/circuits/export`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
     ],
   },
   {
-    title: 'Traffic',
+    titleKey: 'megaMenu.categories.traffic',
+    fallback: 'Traffic',
     icon: <Icon.Bandwidth />,
     items: [
-      { label: 'Traffic Overview', to: `${basePath}/traffic`, icon: <Icon.TrendingUp />, badge: 'SOON', disabled: true },
-      { label: 'Bandwidth Chart', to: `${basePath}/traffic/bandwidth`, icon: <Icon.BarChart />, badge: 'SOON', disabled: true },
-      { label: 'Captures List', to: `${basePath}/traffic/captures`, icon: <Icon.Video />, badge: 'SOON', disabled: true },
-      { label: 'Capture Card', to: `${basePath}/traffic/capture`, icon: <Icon.Video />, badge: 'SOON', disabled: true },
-      { label: 'Packet Analysis', to: `${basePath}/traffic/packets`, icon: <Icon.Database />, badge: 'SOON', disabled: true },
-      { label: 'Flow Analysis', to: `${basePath}/traffic/flows`, icon: <Icon.Layers />, badge: 'SOON', disabled: true },
-      { label: 'Live Capture', to: `${basePath}/traffic/live`, icon: <Icon.Play />, badge: 'SOON', disabled: true },
-      { label: 'Traffic Heatmap', to: `${basePath}/traffic/heatmap`, icon: <Icon.Heatmap />, badge: 'SOON', disabled: true },
-      { label: 'Protocol Stats', to: `${basePath}/traffic/protocols`, icon: <Icon.Layers />, badge: 'SOON', disabled: true },
-      { label: 'Traffic Export', to: `${basePath}/traffic/export`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.trafficOverview', fallback: 'Traffic Overview', to: `${basePath}/traffic`, icon: <Icon.TrendingUp />, badge: 'ALPHA' },
+      { labelKey: 'megaMenu.items.bandwidthChart', fallback: 'Bandwidth Chart', to: `${basePath}/traffic/bandwidth`, icon: <Icon.BarChart />, badge: 'ALPHA' },
+      { labelKey: 'megaMenu.items.capturesList', fallback: 'Captures List', to: `${basePath}/traffic/captures`, icon: <Icon.Video />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.captureCard', fallback: 'Capture Card', to: `${basePath}/traffic/capture`, icon: <Icon.Video />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.packetAnalysis', fallback: 'Packet Analysis', to: `${basePath}/traffic/packets`, icon: <Icon.Database />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.flowAnalysis', fallback: 'Flow Analysis', to: `${basePath}/traffic/flows`, icon: <Icon.Layers />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.liveCapture', fallback: 'Live Capture', to: `${basePath}/traffic/live`, icon: <Icon.Play />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.trafficHeatmap', fallback: 'Traffic Heatmap', to: `${basePath}/traffic/heatmap`, icon: <Icon.Heatmap />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.protocolStats', fallback: 'Protocol Stats', to: `${basePath}/traffic/protocols`, icon: <Icon.Layers />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.trafficExport', fallback: 'Traffic Export', to: `${basePath}/traffic/export`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
     ],
   },
   {
-    title: 'Forensics',
+    titleKey: 'megaMenu.categories.forensics',
+    fallback: 'Forensics',
     icon: <Icon.Search />,
     items: [
-      { label: 'Forensics Overview', to: `${basePath}/forensics`, icon: <Icon.Eye />, badge: 'SOON', disabled: true },
-      { label: 'Timing Correlation', to: `${basePath}/forensics/timing`, icon: <Icon.Clock />, badge: 'SOON', disabled: true },
-      { label: 'Traffic Patterns', to: `${basePath}/forensics/patterns`, icon: <Icon.Waves />, badge: 'SOON', disabled: true },
-      { label: 'Cell Analysis', to: `${basePath}/forensics/cells`, icon: <Icon.Layers />, badge: 'SOON', disabled: true },
-      { label: 'Fingerprinting', to: `${basePath}/forensics/fingerprint`, icon: <Icon.Fingerprint />, badge: 'SOON', disabled: true },
-      { label: 'Attack Detection', to: `${basePath}/forensics/attacks`, icon: <Icon.Crosshair />, badge: 'PRO', disabled: true },
-      { label: 'Anomaly Scanner', to: `${basePath}/forensics/anomaly`, icon: <Icon.AlertTriangle />, badge: 'SOON', disabled: true },
-      { label: 'Deep Inspection', to: `${basePath}/forensics/deep`, icon: <Icon.Search />, badge: 'PRO', disabled: true },
-      { label: 'Correlation Engine', to: `${basePath}/forensics/correlation`, icon: <Icon.GitBranch />, badge: 'PRO', disabled: true },
-      { label: 'Forensics Report', to: `${basePath}/forensics/report`, icon: <Icon.FileText />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.forensicsOverview', fallback: 'Forensics Overview', to: `${basePath}/forensics`, icon: <Icon.Eye />, badge: 'ALPHA' },
+      { labelKey: 'megaMenu.items.timingCorrelation', fallback: 'Timing Correlation', to: `${basePath}/forensics/timing`, icon: <Icon.Clock />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.trafficPatterns', fallback: 'Traffic Patterns', to: `${basePath}/forensics/patterns`, icon: <Icon.Waves />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.cellAnalysis', fallback: 'Cell Analysis', to: `${basePath}/forensics/cells`, icon: <Icon.Layers />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.fingerprinting', fallback: 'Fingerprinting', to: `${basePath}/forensics/fingerprint`, icon: <Icon.Fingerprint />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.attackDetection', fallback: 'Attack Detection', to: `${basePath}/forensics/attacks`, icon: <Icon.Crosshair />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.anomalyScanner', fallback: 'Anomaly Scanner', to: `${basePath}/forensics/anomaly`, icon: <Icon.AlertTriangle />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.deepInspection', fallback: 'Deep Inspection', to: `${basePath}/forensics/deep`, icon: <Icon.Search />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.correlationEngine', fallback: 'Correlation Engine', to: `${basePath}/forensics/correlation`, icon: <Icon.GitBranch />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.forensicsReport', fallback: 'Forensics Report', to: `${basePath}/forensics/report`, icon: <Icon.FileText />, badge: 'SOON', disabled: true },
     ],
   },
   {
-    title: 'Visualization',
+    titleKey: 'megaMenu.categories.visualization',
+    fallback: 'Visualization',
     icon: <Icon.Eye />,
     items: [
-      { label: 'Network Topology', to: `${basePath}/viz/topology`, icon: <Icon.Topology />, badge: 'SOON', disabled: true },
-      { label: 'Circuit Flow Diagram', to: `${basePath}/viz/circuit-flow`, icon: <Icon.GitBranch />, badge: 'SOON', disabled: true },
-      { label: 'Bandwidth Heatmap', to: `${basePath}/viz/heatmap`, icon: <Icon.Heatmap />, badge: 'SOON', disabled: true },
-      { label: '3D Network Globe', to: `${basePath}/viz/3d`, icon: <Icon.Globe />, badge: 'SOON', disabled: true },
-      { label: 'Traffic Animation', to: `${basePath}/viz/animation`, icon: <Icon.Play />, badge: 'SOON', disabled: true },
-      { label: 'Timeline View', to: `${basePath}/viz/timeline`, icon: <Icon.History />, badge: 'SOON', disabled: true },
-      { label: 'Geo Map', to: `${basePath}/viz/geomap`, icon: <Icon.Globe />, badge: 'SOON', disabled: true },
-      { label: 'Sankey Diagram', to: `${basePath}/viz/sankey`, icon: <Icon.Layers />, badge: 'SOON', disabled: true },
-      { label: 'Force Graph', to: `${basePath}/viz/force`, icon: <Icon.Share />, badge: 'SOON', disabled: true },
-      { label: 'Real-time Canvas', to: `${basePath}/viz/canvas`, icon: <Icon.Play />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.networkTopology', fallback: 'Network Topology', to: `${basePath}/viz/topology`, icon: <Icon.Topology />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.circuitFlowDiagram', fallback: 'Circuit Flow Diagram', to: `${basePath}/viz/circuit-flow`, icon: <Icon.GitBranch />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.bandwidthHeatmap', fallback: 'Bandwidth Heatmap', to: `${basePath}/viz/heatmap`, icon: <Icon.Heatmap />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.3dNetworkGlobe', fallback: '3D Network Globe', to: `${basePath}/viz/3d`, icon: <Icon.Globe />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.trafficAnimation', fallback: 'Traffic Animation', to: `${basePath}/viz/animation`, icon: <Icon.Play />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.timelineView', fallback: 'Timeline View', to: `${basePath}/viz/timeline`, icon: <Icon.History />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.geoMap', fallback: 'Geo Map', to: `${basePath}/viz/geomap`, icon: <Icon.Globe />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.sankeyDiagram', fallback: 'Sankey Diagram', to: `${basePath}/viz/sankey`, icon: <Icon.Layers />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.forceGraph', fallback: 'Force Graph', to: `${basePath}/viz/force`, icon: <Icon.Share />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.realtimeCanvas', fallback: 'Real-time Canvas', to: `${basePath}/viz/canvas`, icon: <Icon.Play />, badge: 'PRO', disabled: true },
     ],
   },
   {
-    title: 'Integration',
+    titleKey: 'megaMenu.categories.integration',
+    fallback: 'Integration',
     icon: <Icon.Box />,
     items: [
-      { label: 'Integration Hub', to: `${basePath}/integration`, icon: <Icon.Box />, badge: 'SOON', disabled: true },
-      { label: 'Zeek Logs', to: `${basePath}/integration/zeek`, icon: <Icon.Search />, badge: 'SOON', disabled: true },
-      { label: 'Suricata Alerts', to: `${basePath}/integration/suricata`, icon: <Icon.AlertTriangle />, badge: 'SOON', disabled: true },
-      { label: 'Arkime PCAP', to: `${basePath}/integration/arkime`, icon: <Icon.Database />, badge: 'SOON', disabled: true },
-      { label: 'Neo4j Graph DB', to: `${basePath}/integration/neo4j`, icon: <Icon.Share />, badge: 'SOON', disabled: true },
-      { label: 'MISP Threat Intel', to: `${basePath}/integration/misp`, icon: <Icon.Shield />, badge: 'SOON', disabled: true },
-      { label: 'Elasticsearch', to: `${basePath}/integration/elastic`, icon: <Icon.Search />, badge: 'SOON', disabled: true },
-      { label: 'Grafana Dashboards', to: `${basePath}/integration/grafana`, icon: <Icon.BarChart />, badge: 'SOON', disabled: true },
-      { label: 'Splunk SIEM', to: `${basePath}/integration/splunk`, icon: <Icon.Database />, badge: 'PRO', disabled: true },
-      { label: 'Webhook API', to: `${basePath}/integration/webhooks`, icon: <Icon.Zap />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.integrationHub', fallback: 'Integration Hub', to: `${basePath}/integration`, icon: <Icon.Box />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.zeekLogs', fallback: 'Zeek Logs', to: `${basePath}/integration/zeek`, icon: <Icon.Search />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.suricataAlerts', fallback: 'Suricata Alerts', to: `${basePath}/integration/suricata`, icon: <Icon.AlertTriangle />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.arkimePcap', fallback: 'Arkime PCAP', to: `${basePath}/integration/arkime`, icon: <Icon.Database />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.neo4jGraphDb', fallback: 'Neo4j Graph DB', to: `${basePath}/integration/neo4j`, icon: <Icon.Share />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.mispThreatIntel', fallback: 'MISP Threat Intel', to: `${basePath}/integration/misp`, icon: <Icon.Shield />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.elasticsearch', fallback: 'Elasticsearch', to: `${basePath}/integration/elastic`, icon: <Icon.Search />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.grafanaDashboards', fallback: 'Grafana Dashboards', to: `${basePath}/integration/grafana`, icon: <Icon.BarChart />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.splunkSiem', fallback: 'Splunk SIEM', to: `${basePath}/integration/splunk`, icon: <Icon.Database />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.webhookApi', fallback: 'Webhook API', to: `${basePath}/integration/webhooks`, icon: <Icon.Zap />, badge: 'SOON', disabled: true },
     ],
   },
   {
-    title: 'Reports',
+    titleKey: 'megaMenu.categories.reports',
+    fallback: 'Reports',
     icon: <Icon.FileText />,
     items: [
-      { label: 'Report Generator', to: `${basePath}/reports`, icon: <Icon.FileText />, badge: 'SOON', disabled: true },
-      { label: 'Export PDF', to: `${basePath}/reports/pdf`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
-      { label: 'Export CSV', to: `${basePath}/reports/csv`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
-      { label: 'Export JSON', to: `${basePath}/reports/json`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
-      { label: 'Report Templates', to: `${basePath}/reports/templates`, icon: <Icon.Grid />, badge: 'SOON', disabled: true },
-      { label: 'Scheduled Reports', to: `${basePath}/reports/schedule`, icon: <Icon.Calendar />, badge: 'PRO', disabled: true },
-      { label: 'Email Delivery', to: `${basePath}/reports/email`, icon: <Icon.Bell />, badge: 'PRO', disabled: true },
-      { label: 'Report History', to: `${basePath}/reports/history`, icon: <Icon.History />, badge: 'SOON', disabled: true },
-      { label: 'Custom Branding', to: `${basePath}/reports/branding`, icon: <Icon.Flag />, badge: 'PRO', disabled: true },
-      { label: 'Compliance Reports', to: `${basePath}/reports/compliance`, icon: <Icon.Shield />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.reportGenerator', fallback: 'Report Generator', to: `${basePath}/reports`, icon: <Icon.FileText />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.exportPdf', fallback: 'Export PDF', to: `${basePath}/reports/pdf`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.exportCsv', fallback: 'Export CSV', to: `${basePath}/reports/csv`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.exportJson', fallback: 'Export JSON', to: `${basePath}/reports/json`, icon: <Icon.Download />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.reportTemplates', fallback: 'Report Templates', to: `${basePath}/reports/templates`, icon: <Icon.Grid />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.scheduledReports', fallback: 'Scheduled Reports', to: `${basePath}/reports/schedule`, icon: <Icon.Calendar />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.emailDelivery', fallback: 'Email Delivery', to: `${basePath}/reports/email`, icon: <Icon.Bell />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.reportHistory', fallback: 'Report History', to: `${basePath}/reports/history`, icon: <Icon.History />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.customBranding', fallback: 'Custom Branding', to: `${basePath}/reports/branding`, icon: <Icon.Flag />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.complianceReports', fallback: 'Compliance Reports', to: `${basePath}/reports/compliance`, icon: <Icon.Shield />, badge: 'PRO', disabled: true },
     ],
   },
   {
-    title: 'Analytics',
+    titleKey: 'megaMenu.categories.analytics',
+    fallback: 'Analytics',
     icon: <Icon.TrendingUp />,
     items: [
-      { label: 'Analytics Dashboard', to: networkId ? `/tor-networks/${networkId}/analytics` : '/tor-networks', icon: <Icon.Dashboard />, badge: 'LIVE' },
-      { label: 'Real-time Metrics', to: `${basePath}/analytics/realtime`, icon: <Icon.Play />, badge: 'SOON', disabled: true },
-      { label: 'Historical Data', to: `${basePath}/analytics/history`, icon: <Icon.History />, badge: 'SOON', disabled: true },
-      { label: 'Trend Analysis', to: `${basePath}/analytics/trends`, icon: <Icon.TrendingUp />, badge: 'SOON', disabled: true },
-      { label: 'Custom Dashboards', to: `${basePath}/analytics/custom`, icon: <Icon.Grid />, badge: 'PRO', disabled: true },
-      { label: 'KPI Tracking', to: `${basePath}/analytics/kpi`, icon: <Icon.Target />, badge: 'SOON', disabled: true },
-      { label: 'Predictive Analytics', to: `${basePath}/analytics/predict`, icon: <Icon.TrendingUp />, badge: 'PRO', disabled: true },
-      { label: 'Data Explorer', to: `${basePath}/analytics/explorer`, icon: <Icon.Search />, badge: 'SOON', disabled: true },
-      { label: 'Performance Metrics', to: `${basePath}/analytics/performance`, icon: <Icon.Activity />, badge: 'SOON', disabled: true },
-      { label: 'Usage Statistics', to: `${basePath}/analytics/usage`, icon: <Icon.Stats />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.analyticsDashboard', fallback: 'Analytics Dashboard', to: networkId ? `/tor-networks/${networkId}/analytics` : '/tor-networks', icon: <Icon.Dashboard />, badge: 'LIVE' },
+      { labelKey: 'megaMenu.items.realtimeMetrics', fallback: 'Real-time Metrics', to: `${basePath}/analytics/realtime`, icon: <Icon.Play />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.historicalData', fallback: 'Historical Data', to: `${basePath}/analytics/history`, icon: <Icon.History />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.trendAnalysis', fallback: 'Trend Analysis', to: `${basePath}/analytics/trends`, icon: <Icon.TrendingUp />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.customDashboards', fallback: 'Custom Dashboards', to: `${basePath}/analytics/custom`, icon: <Icon.Grid />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.kpiTracking', fallback: 'KPI Tracking', to: `${basePath}/analytics/kpi`, icon: <Icon.Target />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.predictiveAnalytics', fallback: 'Predictive Analytics', to: `${basePath}/analytics/predict`, icon: <Icon.TrendingUp />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.dataExplorer', fallback: 'Data Explorer', to: `${basePath}/analytics/explorer`, icon: <Icon.Search />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.performanceMetrics', fallback: 'Performance Metrics', to: `${basePath}/analytics/performance`, icon: <Icon.Activity />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.usageStatistics', fallback: 'Usage Statistics', to: `${basePath}/analytics/usage`, icon: <Icon.Stats />, badge: 'SOON', disabled: true },
     ],
   },
   {
-    title: 'Settings',
+    titleKey: 'megaMenu.categories.settings',
+    fallback: 'Settings',
     icon: <Icon.Config />,
     items: [
-      { label: 'Network Settings', to: `${basePath}/settings/network`, icon: <Icon.Topology />, badge: 'SOON', disabled: true },
-      { label: 'Capture Config', to: `${basePath}/settings/capture`, icon: <Icon.Video />, badge: 'SOON', disabled: true },
-      { label: 'Alert Rules', to: `${basePath}/settings/alerts`, icon: <Icon.Bell />, badge: 'SOON', disabled: true },
-      { label: 'API Configuration', to: `${basePath}/settings/api`, icon: <Icon.Key />, badge: 'SOON', disabled: true },
-      { label: 'User Preferences', to: `${basePath}/settings/preferences`, icon: <Icon.Config />, badge: 'SOON', disabled: true },
-      { label: 'Notifications', to: `${basePath}/settings/notifications`, icon: <Icon.Bell />, badge: 'SOON', disabled: true },
-      { label: 'Backup & Restore', to: `${basePath}/settings/backup`, icon: <Icon.Download />, badge: 'PRO', disabled: true },
-      { label: 'Access Control', to: `${basePath}/settings/access`, icon: <Icon.Shield />, badge: 'PRO', disabled: true },
-      { label: 'Audit Logs', to: `${basePath}/settings/audit`, icon: <Icon.FileText />, badge: 'PRO', disabled: true },
-      { label: 'System Info', to: `${basePath}/settings/system`, icon: <Icon.Server />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.networkSettings', fallback: 'Network Settings', to: `${basePath}/settings/network`, icon: <Icon.Topology />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.captureConfig', fallback: 'Capture Config', to: `${basePath}/settings/capture`, icon: <Icon.Video />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.alertRules', fallback: 'Alert Rules', to: `${basePath}/settings/alerts`, icon: <Icon.Bell />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.apiConfiguration', fallback: 'API Configuration', to: `${basePath}/settings/api`, icon: <Icon.Key />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.userPreferences', fallback: 'User Preferences', to: `${basePath}/settings/preferences`, icon: <Icon.Config />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.notifications', fallback: 'Notifications', to: `${basePath}/settings/notifications`, icon: <Icon.Bell />, badge: 'SOON', disabled: true },
+      { labelKey: 'megaMenu.items.backupRestore', fallback: 'Backup & Restore', to: `${basePath}/settings/backup`, icon: <Icon.Download />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.accessControl', fallback: 'Access Control', to: `${basePath}/settings/access`, icon: <Icon.Shield />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.auditLogs', fallback: 'Audit Logs', to: `${basePath}/settings/audit`, icon: <Icon.FileText />, badge: 'PRO', disabled: true },
+      { labelKey: 'megaMenu.items.systemInfo', fallback: 'System Info', to: `${basePath}/settings/system`, icon: <Icon.Server />, badge: 'SOON', disabled: true },
     ],
   },
 ];
@@ -394,12 +356,12 @@ const getMenuData = (basePath: string, networkId?: string): CategoryData[] => [
 // ============================================================================
 // COMPONENTS
 // ============================================================================
-
 const MenuItem: React.FC<{
   item: MenuItemData;
   onClick: () => void;
 }> = ({ item, onClick }) => {
   const location = useLocation();
+  const { t } = useTranslation();
   const isActive = location.pathname === item.to;
   const [isHovered, setIsHovered] = React.useState(false);
 
@@ -409,22 +371,25 @@ const MenuItem: React.FC<{
       case 'BETA': return { ...styles.badge, ...styles.badgeBeta };
       case 'PRO': return { ...styles.badge, ...styles.badgePro };
       case 'SOON': return { ...styles.badge, ...styles.badgeSoon };
+      case 'ALPHA': return { ...styles.badge, ...styles.badgeAlpha };
       default: return styles.badge;
     }
   };
 
   const itemStyle = {
     ...styles.menuItem,
-    ...(isActive ? styles.menuItemActive : {}),
-    ...(isHovered && !isActive && !item.disabled ? styles.menuItemHover : {}),
-    ...(item.disabled ? styles.menuItemDisabled : {}),
+    ...(isActive ? { backgroundColor: 'rgba(136, 206, 208, 0.15)', color: NEON } : {}),
+    ...(isHovered && !isActive && !item.disabled ? { backgroundColor: 'rgba(136, 206, 208, 0.1)' } : {}),
+    ...(item.disabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
   };
+
+  const label = t(item.labelKey, item.fallback);
 
   if (item.disabled) {
     return (
       <div style={itemStyle}>
         {item.icon}
-        <span>{item.label}</span>
+        <span>{label}</span>
         {item.badge && <span style={getBadgeStyle(item.badge)}>{item.badge}</span>}
       </div>
     );
@@ -439,7 +404,7 @@ const MenuItem: React.FC<{
       onMouseLeave={() => setIsHovered(false)}
     >
       {item.icon}
-      <span>{item.label}</span>
+      <span>{label}</span>
       {item.badge && <span style={getBadgeStyle(item.badge)}>{item.badge}</span>}
     </Link>
   );
@@ -448,19 +413,23 @@ const MenuItem: React.FC<{
 const Category: React.FC<{
   category: CategoryData;
   onItemClick: () => void;
-}> = ({ category, onItemClick }) => (
-  <div style={styles.category}>
-    <div style={styles.categoryHeader}>
-      {category.icon}
-      <span style={styles.categoryTitle}>{category.title}</span>
+}> = ({ category, onItemClick }) => {
+  const { t } = useTranslation();
+  
+  return (
+    <div style={styles.category}>
+      <div style={styles.categoryHeader}>
+        {category.icon}
+        <span style={styles.categoryTitle}>{t(category.titleKey, category.fallback)}</span>
+      </div>
+      <div>
+        {category.items.map((item, idx) => (
+          <MenuItem key={idx} item={item} onClick={onItemClick} />
+        ))}
+      </div>
     </div>
-    <div>
-      {category.items.map((item, idx) => (
-        <MenuItem key={idx} item={item} onClick={onItemClick} />
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -476,9 +445,7 @@ export const ChutneXMegaMenu: React.FC = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const location = useLocation();
 
-  // Netzwerke laden und erstes auswählen wenn keins in URL
   useEffect(() => {
     fetch('/api/v1/chutney/networks/')
       .then(res => res.json())
@@ -486,7 +453,6 @@ export const ChutneXMegaMenu: React.FC = () => {
         if (data.results && data.results.length > 0) {
           const networkList = data.results.map((n: any) => ({ id: n.id, name: n.name }));
           setNetworks(networkList);
-          // Automatisch erstes Netzwerk auswählen wenn keins aktiv
           if (!networkId && networkList.length > 0) {
             setSelectedNetwork(networkList[0].id);
           }
@@ -495,14 +461,10 @@ export const ChutneXMegaMenu: React.FC = () => {
       .catch(err => console.error('Failed to load networks:', err));
   }, [networkId]);
 
-  // Sync selectedNetwork mit URL
   useEffect(() => {
-    if (networkId) {
-      setSelectedNetwork(networkId);
-    }
+    if (networkId) setSelectedNetwork(networkId);
   }, [networkId]);
 
-  // Dropdown Animation wenn Menu öffnet
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setDropdownVisible(true), 100);
@@ -520,28 +482,19 @@ export const ChutneXMegaMenu: React.FC = () => {
   };
 
   const toggleMenu = () => {
-    if (isOpen) {
-      closeMenu();
-    } else {
-      setIsOpen(true);
-    }
+    if (isOpen) closeMenu();
+    else setIsOpen(true);
   };
 
-  // Netzwerk wechseln - OHNE Menü zu schließen
   const handleNetworkChange = (newNetworkId: string) => {
     setSelectedNetwork(newNetworkId);
-    // Navigate ohne page reload, Menü bleibt offen
     navigate(`/tor-networks/${newNetworkId}/analytics`);
   };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
+          buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
         closeMenu();
       }
     };
@@ -560,8 +513,6 @@ export const ChutneXMegaMenu: React.FC = () => {
   const activeNetworkId = selectedNetwork || networkId;
   const basePath = activeNetworkId ? `/tor-networks/${activeNetworkId}/analytics` : '/tor-networks';
   const menuData = getMenuData(basePath, activeNetworkId);
-
-  const selectedNetworkName = networks.find(n => n.id === activeNetworkId)?.name || 'Netzwerk wählen...';
 
   return (
     <div style={{ position: 'relative' }}>
@@ -605,16 +556,29 @@ export const ChutneXMegaMenu: React.FC = () => {
           >
             <div style={styles.innerContainer}>
               <div style={styles.header}>
-                <div style={styles.headerTitle}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <Icon.Topology />
-                  <div style={styles.headerTextContainer}>
-                    <span style={styles.headerText}>ChutneX Analytics Suite</span>
-                    <span style={styles.headerSubtitle}>Echtzeit-Forensik und Datenanalyse für private Tor-Netzwerke</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'white', letterSpacing: '-0.025em' }}>
+                      {t('megaMenu.title', 'ChutneX Analytics Suite')}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 400 }}>
+                      {t('megaMenu.subtitle', 'Real-time forensics for private Tor networks')}
+                    </span>
                   </div>
-                  <span style={styles.liveBadge}>LIVE</span>
+                  <span style={{
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(136, 206, 208, 0.2)',
+                    color: '#88CED0',
+                    letterSpacing: '0.05em',
+                  }}>
+                    {t('chutnexPages.common.live', 'LIVE')}
+                  </span>
                 </div>
                 
-                {/* Network Selector mit Animation */}
                 <div 
                   style={{ 
                     display: 'flex', 
@@ -627,7 +591,9 @@ export const ChutneXMegaMenu: React.FC = () => {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Icon.Network />
-                    <span style={{ color: '#64748b', fontSize: '13px' }}>Aktives Netzwerk:</span>
+                    <span style={{ color: '#64748b', fontSize: '13px' }}>
+                      {t('megaMenu.activeNetwork', 'Active Network')}:
+                    </span>
                   </div>
                   <select
                     style={{
@@ -654,7 +620,7 @@ export const ChutneXMegaMenu: React.FC = () => {
                       e.target.style.boxShadow = 'none';
                     }}
                   >
-                    {networks.length === 0 && <option value="">Laden...</option>}
+                    {networks.length === 0 && <option value="">{t('megaMenu.loading', 'Loading...')}</option>}
                     {networks.map(n => (
                       <option key={n.id} value={n.id}>{n.name}</option>
                     ))}
@@ -664,33 +630,17 @@ export const ChutneXMegaMenu: React.FC = () => {
               
               <div style={styles.grid}>
                 {menuData.map((category, idx) => (
-                  <Category
-                    key={idx}
-                    category={category}
-                    onItemClick={closeMenu}
-                  />
+                  <Category key={idx} category={category} onItemClick={closeMenu} />
                 ))}
               </div>
             </div>
           </div>
 
           <style>{`
-            @keyframes slideDown {
-              from { opacity: 0; transform: translateY(-20px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes slideUp {
-              from { opacity: 1; transform: translateY(0); }
-              to { opacity: 0; transform: translateY(-20px); }
-            }
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes fadeOut {
-              from { opacity: 1; }
-              to { opacity: 0; }
-            }
+            @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+            @keyframes slideUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
           `}</style>
         </>
       )}
