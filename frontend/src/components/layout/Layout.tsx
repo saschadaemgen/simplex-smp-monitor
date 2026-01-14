@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import MiniPlayer from '../music/MiniPlayer';
 import FloatingVideoWidget from '../music/FloatingVideoWidget';
 import { useVideoWidget } from '../../contexts/VideoWidgetContext';
+import { ChutneXMegaMenu } from '../navigation';
 
 export default function Layout() {
   const { t } = useTranslation();
@@ -57,12 +58,12 @@ export default function Layout() {
     window.open('https://github.com/cannatoshi/simplex-smp-monitor', '_blank', 'noopener,noreferrer');
   };
 
-  // Top Navigation Items
+  // Top Navigation Items - ChutneX wird separat als MegaMenu gerendert
   const navItems = [
     { to: '/dashboard', label: t('nav.dashboard') },
     { to: '/servers', label: t('nav.servers') },
     { to: '/clients', label: t('nav.clients') },
-    { to: '/tor-networks', label: t('nav.chutney') },
+    // ChutneX ist jetzt das MegaMenu - nicht mehr hier
     { to: '/diagnostics', label: t('nav.diagnostics') },
     { to: '/traffic', label: t('nav.traffic') },
     { to: '/forensics', label: t('nav.forensics') },
@@ -74,6 +75,9 @@ export default function Layout() {
     if (path === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/';
     return location.pathname.startsWith(path);
   };
+
+  // Check if we're in ChutneX section
+  const isChutneXActive = location.pathname.startsWith('/tor-networks');
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white">
@@ -127,9 +131,59 @@ export default function Layout() {
 
             {/* Right: Navigation Menu - NEON BLUE */}
             <nav className="flex items-center">
-              {navItems.map((item, index) => {
+              {navItems.slice(0, 3).map((item, index) => {
                 const active = isActive(item.to);
-                const isLast = index === navItems.length - 1;
+                return (
+                  <div key={item.to} className="flex items-center">
+                    <NavLink
+                      to={item.to}
+                      className="relative group px-3 py-2"
+                    >
+                      <span 
+                        className="text-sm font-medium transition-colors"
+                        style={{ 
+                          color: active ? neonBlue : undefined,
+                          opacity: active ? 1 : 0.6
+                        }}
+                      >
+                        <span className={active ? '' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}>
+                          {!active && item.label}
+                        </span>
+                        {active && item.label}
+                      </span>
+                      
+                      {/* Unterstrich-Effekt - NEON BLUE */}
+                      <div 
+                        className={`absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-all duration-300 ${
+                          active 
+                            ? 'opacity-100 scale-x-100' 
+                            : 'opacity-0 scale-x-0 group-hover:opacity-50 group-hover:scale-x-100'
+                        }`} 
+                        style={{ 
+                          backgroundColor: neonBlue,
+                          transformOrigin: 'center' 
+                        }} 
+                      />
+                    </NavLink>
+                    
+                    {/* Horizontaler Trennstrich */}
+                    <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
+                  </div>
+                );
+              })}
+
+              {/* ChutneX Mega Menu */}
+              <div className="flex items-center">
+                <div className={`relative ${isChutneXActive ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-[#88CED0]' : ''}`}>
+                  <ChutneXMegaMenu />
+                </div>
+                <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
+              </div>
+
+              {/* Rest of nav items */}
+              {navItems.slice(3).map((item, index) => {
+                const active = isActive(item.to);
+                const isLast = index === navItems.slice(3).length - 1;
                 return (
                   <div key={item.to} className="flex items-center">
                     <NavLink

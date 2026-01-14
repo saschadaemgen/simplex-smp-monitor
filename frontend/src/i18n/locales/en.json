@@ -499,7 +499,7 @@
   },
   "footer": {
     "copyright": "cannatoshi 💫",
-    "version": "0.1.12-alpha"
+    "version": "0.1.13-alpha"
   },
   "hostingModes": {
     "title": "Hosting Mode",
@@ -511,5 +511,140 @@
     "torDesc": "Via public Tor",
     "chutnex": "ChutneX",
     "chutnexDesc": "Private Tor network"
+  },
+  "chutnexMenu": {
+    "title": "ChutneX Analytics",
+    "subtitle": "Tor Network Forensics Platform",
+    "overview": {
+      "title": "Overview",
+      "dashboard": "Dashboard",
+      "dashboardDesc": "Real-time network overview",
+      "stats": "Statistics",
+      "statsDesc": "Aggregated metrics & KPIs",
+      "health": "Health",
+      "healthDesc": "Node & consensus status",
+      "activity": "Activity",
+      "activityDesc": "Live event stream"
+    },
+    "network": {
+      "title": "Network",
+      "topology": "Topology",
+      "topologyDesc": "Interactive network visualization",
+      "consensus": "Consensus",
+      "consensusDesc": "Directory authority status",
+      "config": "Configuration",
+      "configDesc": "Network settings",
+      "docker": "Docker",
+      "dockerDesc": "Container management"
+    },
+    "nodes": {
+      "title": "Nodes",
+      "all": "All Nodes",
+      "allDesc": "Complete node overview",
+      "da": "Directory Authorities",
+      "daDesc": "Consensus coordinators",
+      "guards": "Guard Relays",
+      "guardsDesc": "Entry nodes",
+      "middle": "Middle Relays",
+      "middleDesc": "Relay nodes",
+      "exits": "Exit Relays",
+      "exitsDesc": "Exit nodes",
+      "clients": "Clients",
+      "clientsDesc": "Tor client nodes",
+      "hs": "Hidden Services",
+      "hsDesc": "Onion services"
+    },
+    "circuits": {
+      "title": "Circuits",
+      "active": "Active Circuits",
+      "activeDesc": "Running connections",
+      "history": "Circuit History",
+      "historyDesc": "Past circuits",
+      "paths": "Path Analysis",
+      "pathsDesc": "Circuit route visualization",
+      "events": "Circuit Events",
+      "eventsDesc": "Build/destroy events",
+      "purposes": "By Purpose",
+      "purposesDesc": "GENERAL, HS, TESTING, etc."
+    },
+    "traffic": {
+      "title": "Traffic",
+      "bandwidth": "Bandwidth",
+      "bandwidthDesc": "Real-time throughput",
+      "captures": "Captures",
+      "capturesDesc": "PCAP recordings",
+      "flows": "Flows",
+      "flowsDesc": "Network flows",
+      "packets": "Packets",
+      "packetsDesc": "Packet analysis",
+      "heatmap": "Heatmap",
+      "heatmapDesc": "Traffic distribution"
+    },
+    "forensics": {
+      "title": "Forensics",
+      "timing": "Timing Correlation",
+      "timingDesc": "Entry/exit analysis",
+      "patterns": "Traffic Patterns",
+      "patternsDesc": "Pattern detection",
+      "cells": "Cell Analysis",
+      "cellsDesc": "Tor cell inspection",
+      "fingerprint": "Fingerprinting",
+      "fingerprintDesc": "Flow identification",
+      "attacks": "Attack Simulation",
+      "attacksDesc": "Penetration testing"
+    },
+    "analysis": {
+      "title": "Analysis",
+      "realtime": "Real-time",
+      "realtimeDesc": "Live monitoring",
+      "historical": "Historical",
+      "historicalDesc": "Time-series analysis",
+      "comparison": "Comparison",
+      "comparisonDesc": "Node/circuit comparisons",
+      "anomalies": "Anomalies",
+      "anomaliesDesc": "Deviation detection"
+    },
+    "integration": {
+      "title": "Integration",
+      "zeek": "Zeek",
+      "zeekDesc": "Network analysis framework",
+      "suricata": "Suricata",
+      "suricataDesc": "IDS/IPS alerts",
+      "arkime": "Arkime",
+      "arkimeDesc": "Full packet capture",
+      "neo4j": "Neo4j",
+      "neo4jDesc": "Graph database",
+      "misp": "MISP",
+      "mispDesc": "Threat intelligence"
+    },
+    "reports": {
+      "title": "Reports",
+      "generate": "Generate",
+      "generateDesc": "Create report",
+      "templates": "Templates",
+      "templatesDesc": "Report templates",
+      "export": "Export",
+      "exportDesc": "PDF, JSON, CSV",
+      "schedule": "Schedule",
+      "scheduleDesc": "Automated reports"
+    },
+    "settings": {
+      "title": "Settings",
+      "network": "Network",
+      "networkDesc": "Tor network config",
+      "capture": "Capture",
+      "captureDesc": "PCAP settings",
+      "alerts": "Alerts",
+      "alertsDesc": "Notifications",
+      "api": "API",
+      "apiDesc": "REST API access"
+    },
+    "badges": {
+      "live": "LIVE",
+      "new": "NEW",
+      "beta": "BETA",
+      "pro": "PRO",
+      "phase10": "Phase 10"
+    }
   }
 }
