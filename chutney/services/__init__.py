@@ -9,7 +9,14 @@ from .docker_manager import (
     get_chutnex_manager,
 )
 
+from .tor_control import (
+    TorControlService,
+    get_tor_control_service,
+)
+
 __all__ = [
     'ChutneXManager',
     'get_chutnex_manager',
+    'TorControlService',
+    'get_tor_control_service',
 ]
