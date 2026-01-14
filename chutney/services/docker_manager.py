@@ -10,7 +10,9 @@ Based on testing-tor-network architecture.
 import logging
 import time
 import docker
+from datetime import datetime
 from django.conf import settings
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,7 @@ class ChutneXManager:
             network_name = f"{self.NETWORK_PREFIX}-{network.slug}"
             volume_name = f"{self.STATUS_VOLUME_PREFIX}-{network.slug}"
             
-            # Create isolated Docker network
+            # Create Docker network (NOT internal - we need port mappings!)
             try:
                 self.client.networks.get(network_name)
                 logger.info(f"Network {network_name} already exists")
@@ -50,14 +52,14 @@ class ChutneXManager:
                 self.client.networks.create(
                     network_name,
                     driver='bridge',
-                    internal=True,  # ISOLATED - no internet!
+                    # internal=False allows port mappings to host
                     ipam=docker.types.IPAMConfig(
                         pool_configs=[
                             docker.types.IPAMPool(subnet='10.99.0.0/16')
                         ]
                     )
                 )
-                logger.info(f"Created isolated network: {network_name}")
+                logger.info(f"Created network: {network_name}")
             
             # Create shared status volume
             try:
@@ -156,7 +158,6 @@ class ChutneXManager:
         role = role_map.get(node.node_type, 'client')
         
         # Environment variables
-        # Count DAs in network for synchronization
         da_count = network.nodes.filter(node_type='da').count()
         
         environment = {
@@ -171,12 +172,26 @@ class ChutneXManager:
             environment['SERVICE_PORT'] = str(node.hs_target_port or 80)
             environment['SERVICE_IP'] = '127.0.0.1'
         
-        # Port bindings (only for clients)
+        # Port bindings - Control Port for ALL nodes, SOCKS for clients
         ports = {}
-        if node.node_type == 'client' and node.socks_port:
-            ports['9050/tcp'] = node.socks_port
         
-        # Create container WITHOUT network (to preserve port bindings)
+        # Control Port mapping (9051 internal -> node.control_port external)
+        if node.control_port:
+            ports['9051/tcp'] = ('0.0.0.0', node.control_port)
+        
+        # SOCKS Port for clients (9050 internal -> node.socks_port external)
+        if node.node_type == 'client' and node.socks_port:
+            ports['9050/tcp'] = ('0.0.0.0', node.socks_port)
+        
+        # OR Port for relays
+        if node.or_port and node.node_type in ['da', 'guard', 'middle', 'exit']:
+            ports['9001/tcp'] = ('0.0.0.0', node.or_port)
+        
+        # Dir Port for DAs
+        if node.dir_port and node.node_type == 'da':
+            ports['9030/tcp'] = ('0.0.0.0', node.dir_port)
+        
+        # Create container
         container = self.client.containers.create(
             image=self.CHUTNEX_IMAGE,
             name=container_name,
@@ -188,14 +203,7 @@ class ChutneXManager:
             ports=ports if ports else None,
         )
         
-        # Disconnect from default bridge network
-        try:
-            default_net = self.client.networks.get('bridge')
-            default_net.disconnect(container)
-        except:
-            pass
-        
-        # Connect to our isolated network with static IP
+        # Connect to our network with static IP
         docker_net = self.client.networks.get(network_name)
         docker_net.connect(container, ipv4_address=ip_address)
         
@@ -206,13 +214,46 @@ class ChutneXManager:
         node.container_id = container.id
         node.container_name = container_name
         node.status = TorNode.Status.STARTING
-        node.save(update_fields=['container_id', 'container_name', 'status'])
+        node.started_at = timezone.now()
+        node.save(update_fields=['container_id', 'container_name', 'status', 'started_at'])
         
-        logger.info(f"Started node {node.name} ({role}) at {ip_address}")
+        logger.info(f"Started node {node.name} ({role}) at {ip_address} with ports {ports}")
         return container.id
+    
+    def start_node(self, node) -> bool:
+        """Start a single node (must have container created)."""
+        from chutney.models import TorNode
+        try:
+            if node.container_name:
+                container = self.client.containers.get(node.container_name)
+                container.start()
+                node.status = TorNode.Status.STARTING
+                node.started_at = timezone.now()
+                node.save(update_fields=['status', 'started_at'])
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to start node {node.name}: {e}")
+            return False
+    
+    def stop_node(self, node) -> bool:
+        """Stop a single node."""
+        from chutney.models import TorNode
+        try:
+            if node.container_name:
+                container = self.client.containers.get(node.container_name)
+                container.stop(timeout=5)
+                node.status = TorNode.Status.STOPPED
+                node.save(update_fields=['status'])
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to stop node {node.name}: {e}")
+            return False
     
     def delete_node(self, node) -> bool:
         """Stop and remove a node container."""
+        from chutney.models import TorNode
         try:
             if node.container_name:
                 try:
@@ -224,7 +265,7 @@ class ChutneXManager:
             
             node.container_id = ''
             node.container_name = ''
-            node.status = 'not_created'
+            node.status = TorNode.Status.NOT_CREATED
             node.save(update_fields=['container_id', 'container_name', 'status'])
             
             return True
@@ -251,7 +292,7 @@ class ChutneXManager:
                 return {'status': 'not_created', 'running': False}
             
             container = self.client.containers.get(node.container_name)
-            logs = container.logs(tail=20).decode('utf-8')
+            logs = container.logs(tail=50).decode('utf-8')
             
             # Check bootstrap progress
             bootstrap_pct = 0
@@ -276,6 +317,39 @@ class ChutneXManager:
         except Exception as e:
             return {'status': 'error', 'running': False, 'error': str(e)}
     
+    def update_node_status_from_container(self, node) -> bool:
+        """Update node DB status from actual container status."""
+        from chutney.models import TorNode
+        
+        try:
+            status = self.get_node_status(node)
+            
+            if status['running']:
+                if status['bootstrap_progress'] >= 100:
+                    node.status = TorNode.Status.RUNNING
+                else:
+                    node.status = TorNode.Status.BOOTSTRAPPING
+                node.bootstrap_progress = status['bootstrap_progress']
+            elif status['status'] == 'exited':
+                node.status = TorNode.Status.STOPPED
+            elif status['status'] == 'not_found':
+                node.status = TorNode.Status.NOT_CREATED
+            
+            node.save(update_fields=['status', 'bootstrap_progress'])
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update node status: {e}")
+            return False
+    
+    def update_all_node_statuses(self, network) -> int:
+        """Update status for all nodes in a network. Returns count of running nodes."""
+        running_count = 0
+        for node in network.nodes.all():
+            self.update_node_status_from_container(node)
+            if node.status == 'running':
+                running_count += 1
+        return running_count
+    
     # ==========================================================================
     # Full Network Lifecycle
     # ==========================================================================
@@ -289,6 +363,7 @@ class ChutneXManager:
         2. Start DAs first (they register their fingerprints)
         3. Wait for DAs to be ready
         4. Start all other nodes
+        5. Wait for bootstrap and update statuses
         """
         from chutney.models import TorNetwork, TorNode
         
@@ -340,10 +415,19 @@ class ChutneXManager:
                 ip_counter += 1
                 self.create_and_start_node(node, ip)
             
-            # Update status
+            # Wait for bootstrap
+            network.status_message = "Waiting for nodes to bootstrap..."
+            network.save(update_fields=['status_message'])
+            time.sleep(10)
+            
+            # Update all node statuses
+            running_count = self.update_all_node_statuses(network)
+            
+            # Update network status
             network.status = TorNetwork.Status.RUNNING
-            network.status_message = f"Network running with {network.nodes.count()} nodes"
-            network.save(update_fields=['status', 'status_message'])
+            network.status_message = f"Network running with {running_count}/{network.nodes.count()} nodes bootstrapped"
+            network.started_at = timezone.now()
+            network.save(update_fields=['status', 'status_message', 'started_at'])
             
             logger.info(f"ChutneX network '{network.name}' started successfully")
             return True
@@ -364,22 +448,43 @@ class ChutneXManager:
             network.save(update_fields=['status'])
             
             for node in network.nodes.all():
-                if node.container_name:
-                    try:
-                        container = self.client.containers.get(node.container_name)
-                        container.stop(timeout=5)
-                        node.status = TorNode.Status.STOPPED
-                        node.save(update_fields=['status'])
-                    except:
-                        pass
+                self.stop_node(node)
             
             network.status = TorNetwork.Status.STOPPED
-            network.save(update_fields=['status'])
+            network.stopped_at = timezone.now()
+            network.save(update_fields=['status', 'stopped_at'])
             return True
             
         except Exception as e:
             logger.error(f"Failed to stop network: {e}")
             return False
+    
+    def refresh_network_status(self, network) -> dict:
+        """Refresh status of all nodes and return summary."""
+        from chutney.models import TorNetwork
+        
+        running_count = self.update_all_node_statuses(network)
+        total = network.nodes.count()
+        
+        # Update network bootstrap progress
+        if total > 0:
+            total_bootstrap = sum(n.bootstrap_progress for n in network.nodes.all())
+            network.bootstrap_progress = total_bootstrap // total
+        
+        # Check consensus
+        if running_count == total and network.bootstrap_progress >= 100:
+            network.consensus_valid = True
+            if network.status != TorNetwork.Status.RUNNING:
+                network.status = TorNetwork.Status.RUNNING
+        
+        network.save()
+        
+        return {
+            'total': total,
+            'running': running_count,
+            'bootstrap_progress': network.bootstrap_progress,
+            'consensus_valid': network.consensus_valid,
+        }
     
     def _ensure_nodes_exist(self, network):
         """Create node records in DB based on network config."""
@@ -488,35 +593,3 @@ def get_chutnex_manager() -> ChutneXManager:
     if _manager is None:
         _manager = ChutneXManager()
     return _manager
-
-    # ==========================================================================
-    # Additional Node Methods (API compatibility)
-    # ==========================================================================
-    
-    def start_node(self, node) -> bool:
-        """Start a single node (must have IP assigned)."""
-        try:
-            if node.container_name:
-                container = self.client.containers.get(node.container_name)
-                container.start()
-                node.status = 'running'
-                node.save(update_fields=['status'])
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"Failed to start node {node.name}: {e}")
-            return False
-    
-    def stop_node(self, node) -> bool:
-        """Stop a single node."""
-        try:
-            if node.container_name:
-                container = self.client.containers.get(node.container_name)
-                container.stop(timeout=5)
-                node.status = 'stopped'
-                node.save(update_fields=['status'])
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"Failed to stop node {node.name}: {e}")
-            return False

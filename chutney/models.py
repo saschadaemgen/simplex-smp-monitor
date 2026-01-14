@@ -1,7 +1,7 @@
 """
 SimpleX SMP Monitor - Chutney Models
 ====================================
-Copyright (c) 2025 cannatoshi
+Copyright (c) 2026 cannatoshi
 
 Private Tor network models for traffic analysis and forensics.
 
