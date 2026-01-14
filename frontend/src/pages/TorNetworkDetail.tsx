@@ -298,6 +298,17 @@ export default function TorNetworkDetail() {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Analytics Button - nur bei running */}
+          {status === 'running' && (
+            <Link
+              to={`/tor-networks/${network.id}/analytics`}
+              className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90"
+              style={{ backgroundColor: neonBlue, color: '#0f172a' }}
+            >
+              📊 {t('chutney.actions.analytics', 'Analytics')}
+            </Link>
+          )}
+          
           {status === 'not_created' && (
             <button
               onClick={() => handleNetworkAction('create')}

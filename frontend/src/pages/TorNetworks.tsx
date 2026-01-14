@@ -328,6 +328,16 @@ export default function TorNetworks() {
                     >
                       {t('common.details', 'Details')}
                     </Link>
+                    {/* Analytics Link - nur bei running */}
+                    {status === 'running' && (
+                      <Link 
+                        to={`/tor-networks/${network.id}/analytics`} 
+                        className="transition-colors hover:opacity-80"
+                        style={{ color: neonBlue }}
+                      >
+                        📊 {t('chutney.actions.analytics', 'Analytics')}
+                      </Link>
+                    )}
                     <Link 
                       to={`/tor-networks/${network.id}/edit`} 
                       className="transition-colors hover:opacity-80"
