@@ -1,7 +1,14 @@
+import React from 'react';
 import { useParams } from 'react-router-dom';
-import { CircuitFilters } from '../../../components/chutneX/circuits';
 
-export default function CircuitFiltersPage() {
-  const { id: networkId } = useParams<{ id: string }>();
-  return <CircuitFilters networkId={networkId!} />;
-}
+const CircuitFiltersPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <div className="h-full bg-[#0a0a0f] p-6">
+      <h1 className="text-2xl font-bold text-[#88CED0]">Circuit Filters</h1>
+      <p className="text-gray-500">Network: {id}</p>
+    </div>
+  );
+};
+
+export default CircuitFiltersPage;

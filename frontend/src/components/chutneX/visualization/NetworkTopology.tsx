@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { TopologyNode, TopologyEdge, NodeType, Circuit } from '../types';
 import { 
-  Server, Shield, Shuffle, DoorOpen, Monitor, Globe,
+  
   ZoomIn, ZoomOut, Maximize2, Download
 } from 'lucide-react';
 
@@ -28,9 +28,9 @@ const nodeTypeConfig: Record<NodeType, { color: string; bgColor: string }> = {
 export const NetworkTopology: React.FC<NetworkTopologyProps> = ({
   nodes,
   edges,
-  circuits = [],
+  circuits: _ = [],
   onNodeClick,
-  highlightCircuit,
+  highlightCircuit: __,
 }) => {
   // Calculate positions in a circular layout by type
   const positionedNodes = useMemo(() => {

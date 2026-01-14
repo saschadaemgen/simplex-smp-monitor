@@ -5,7 +5,8 @@ import React from 'react';
 import { CircuitHop } from '../types';
 import { 
   Shield, Server, Shuffle, DoorOpen, 
-  ArrowRight, Fingerprint, Globe
+  ArrowRight, Fingerprint, Globe,
+  GitBranch
 } from 'lucide-react';
 
 interface CircuitPathVizProps {

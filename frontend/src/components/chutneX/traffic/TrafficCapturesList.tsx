@@ -5,8 +5,8 @@ import React, { useState } from 'react';
 import { TrafficCapture } from '../types';
 import { TrafficCaptureCard } from './TrafficCaptureCard';
 import { 
-  Video, Download, Play, Square, Search,
-  Filter, Clock, Database
+  Video, Play, Search,
+
 } from 'lucide-react';
 
 interface TrafficCapturesListProps {

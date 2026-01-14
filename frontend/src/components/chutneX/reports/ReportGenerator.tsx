@@ -3,7 +3,7 @@
  */
 import React, { useState } from 'react';
 import { 
-  FileText, Download, Share2, Clock, 
+  FileText, Download, 
   CheckCircle, Loader2, Settings, File
 } from 'lucide-react';
 
@@ -30,7 +30,7 @@ const reportFormats = [
 ];
 
 export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
-  networkId,
+  networkId: _,
   networkName,
   onGenerate,
 }) => {

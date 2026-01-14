@@ -31,7 +31,7 @@ export const PacketAnalysis: React.FC<PacketAnalysisProps> = ({
   return (
     <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
       <h4 className="font-medium text-white mb-4 flex items-center gap-2">
-        <Database size={18} className="text-[#88CED0]" />
+        <Database radius={4} className="text-[#88CED0]" />
         Packet Analysis
       </h4>
 
@@ -87,7 +87,7 @@ export const PacketAnalysis: React.FC<PacketAnalysisProps> = ({
         <div className="mt-4 pt-4 border-t border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-gray-400">
-              <Clock size={14} />
+              <Clock radius={4} />
               <span className="text-sm">Avg Inter-Packet Delay</span>
             </div>
             <span className="font-mono text-[#88CED0]">{avgInterPacketDelay.toFixed(2)} ms</span>
@@ -126,7 +126,7 @@ interface StatBoxProps {
 const StatBox: React.FC<StatBoxProps> = ({ icon, label, value, subtext, warning = false }) => (
   <div className={`bg-gray-900/50 rounded-lg p-3 ${warning ? 'border border-red-500/30' : ''}`}>
     <div className="flex items-center gap-2 mb-1">
-      {React.cloneElement(icon as React.ReactElement, { size: 14 })}
+      {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-3.5 h-3.5' })}
       <span className="text-xs text-gray-400">{label}</span>
     </div>
     <div className={`text-lg font-bold font-mono ${warning ? 'text-red-400' : 'text-white'}`}>

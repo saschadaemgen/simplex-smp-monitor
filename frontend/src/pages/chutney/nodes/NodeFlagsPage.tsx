@@ -1,7 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { NodeFlags } from '../../../components/chutneX/nodes';
-
-export default function NodeFlagsPage() {
-  const { id: networkId } = useParams<{ id: string }>();
-  return <NodeFlags networkId={networkId!} />;
-}
+const NodeFlagsPage = () => {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <div className="h-full bg-[#0a0a0f] p-6">
+      <h1 className="text-2xl font-bold text-[#88CED0]">Node Flags</h1>
+      <p className="text-gray-500">Network: {id}</p>
+    </div>
+  );
+};
+export default NodeFlagsPage;

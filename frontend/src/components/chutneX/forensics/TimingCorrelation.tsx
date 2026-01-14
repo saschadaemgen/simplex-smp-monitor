@@ -4,7 +4,7 @@
 import React from 'react';
 import { TimingCorrelation as TimingCorrelationType } from '../types';
 import { 
-  Clock, AlertTriangle, CheckCircle, Activity,
+  Clock, AlertTriangle, Activity,
   TrendingUp, Zap, Shield
 } from 'lucide-react';
 
@@ -49,7 +49,7 @@ export const TimingCorrelation: React.FC<TimingCorrelationProps> = ({
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-medium text-white flex items-center gap-2">
-            <Clock size={18} className="text-purple-400" />
+            <Clock radius={4} className="text-purple-400" />
             Timing Correlation Analysis
           </h4>
           <div className="flex items-center gap-2 text-sm">
@@ -98,7 +98,7 @@ export const TimingCorrelation: React.FC<TimingCorrelationProps> = ({
           </div>
         ) : (
           <div className="p-8 text-center text-gray-500">
-            <Clock size={48} className="mx-auto mb-4 opacity-50" />
+            <Clock radius={4} className="mx-auto mb-4 opacity-50" />
             <p>No timing correlation data available</p>
             <p className="text-sm mt-1">Collect traffic data to enable analysis</p>
           </div>
@@ -109,7 +109,7 @@ export const TimingCorrelation: React.FC<TimingCorrelationProps> = ({
       {highCorrelations.length > 0 && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
           <h4 className="font-medium text-red-400 mb-3 flex items-center gap-2">
-            <Shield size={18} />
+            <Shield radius={4} />
             Security Recommendations
           </h4>
           <ul className="text-sm text-red-400/80 space-y-2">
@@ -142,7 +142,7 @@ interface SummaryCardProps {
 const SummaryCard: React.FC<SummaryCardProps> = ({ icon, label, value, warning = false }) => (
   <div className={`bg-gray-800/50 border rounded-xl p-4 ${warning ? 'border-red-500/50' : 'border-gray-700'}`}>
     <div className="flex items-center gap-2 mb-2">
-      {React.cloneElement(icon as React.ReactElement, { size: 18 })}
+      {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
       <span className="text-gray-400 text-sm">{label}</span>
     </div>
     <div className={`text-2xl font-bold font-mono ${warning ? 'text-red-400' : 'text-white'}`}>
@@ -177,12 +177,12 @@ const CorrelationRow: React.FC<CorrelationRowProps> = ({ correlation, threshold 
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <span className="text-green-400 font-mono text-sm">{correlation.entry_node}</span>
-          <Zap size={14} className="text-gray-500" />
+          <Zap radius={4} className="text-gray-500" />
           <span className="text-orange-400 font-mono text-sm">{correlation.exit_node}</span>
         </div>
         
         <div className="flex items-center gap-3">
-          {isHigh && <AlertTriangle size={14} className="text-red-400" />}
+          {isHigh && <AlertTriangle radius={4} className="text-red-400" />}
           <span className={`font-mono font-bold ${getScoreColor(correlation.correlation_score)}`}>
             {scorePercent.toFixed(1)}%
           </span>

@@ -39,7 +39,7 @@ const patternConfig: Record<string, { icon: React.ElementType; color: string; de
 
 export const TrafficPatterns: React.FC<TrafficPatternsProps> = ({
   patterns,
-  nodeId,
+  
   nodeName,
 }) => {
   // Group patterns by type
@@ -62,7 +62,7 @@ export const TrafficPatterns: React.FC<TrafficPatternsProps> = ({
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-medium text-white flex items-center gap-2">
-            <BarChart2 size={18} className="text-[#88CED0]" />
+            <BarChart2 radius={4} className="text-[#88CED0]" />
             Traffic Pattern Analysis
             {nodeName && <span className="text-gray-400">- {nodeName}</span>}
           </h4>
@@ -84,7 +84,7 @@ export const TrafficPatterns: React.FC<TrafficPatternsProps> = ({
                 className="bg-gray-900/50 rounded-lg p-3"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Icon size={16} className={config.color} />
+                  <Icon radius={4} className={config.color} />
                   <span className="text-sm text-white capitalize">{type}</span>
                 </div>
                 <div className="flex items-end justify-between">
@@ -134,7 +134,7 @@ export const TrafficPatterns: React.FC<TrafficPatternsProps> = ({
           </div>
         ) : (
           <div className="p-8 text-center text-gray-500">
-            <Activity size={48} className="mx-auto mb-4 opacity-50" />
+            <Activity radius={4} className="mx-auto mb-4 opacity-50" />
             <p>No traffic patterns detected</p>
           </div>
         )}
@@ -144,7 +144,7 @@ export const TrafficPatterns: React.FC<TrafficPatternsProps> = ({
       {patternCounts.periodic && patternCounts.periodic > 0 && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="text-yellow-400 flex-shrink-0" size={20} />
+            <AlertCircle className="text-yellow-400 flex-shrink-0" radius={4} />
             <div>
               <h5 className="font-medium text-yellow-400 mb-1">Fingerprinting Risk</h5>
               <p className="text-sm text-yellow-400/70">
@@ -169,7 +169,7 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ icon, label, value }) => (
   <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
     <div className="flex items-center gap-2 mb-2">
-      {React.cloneElement(icon as React.ReactElement, { size: 16 })}
+      {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
       <span className="text-gray-400 text-sm">{label}</span>
     </div>
     <div className="text-xl font-bold font-mono text-white">{value}</div>
@@ -189,7 +189,7 @@ const PatternRow: React.FC<PatternRowProps> = ({ pattern }) => {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <div className={`p-1.5 rounded-lg bg-gray-700/50 ${config.color}`}>
-            <Icon size={16} />
+            <Icon radius={4} />
           </div>
           <div>
             <span className="text-white font-medium capitalize">{pattern.pattern_type}</span>
@@ -215,7 +215,7 @@ const PatternRow: React.FC<PatternRowProps> = ({ pattern }) => {
 
       {pattern.burst_count !== undefined && pattern.burst_count > 0 && (
         <div className="mt-2 text-xs text-yellow-400">
-          <Zap size={10} className="inline mr-1" />
+          <Zap radius={4} className="inline mr-1" />
           {pattern.burst_count} burst events detected
         </div>
       )}

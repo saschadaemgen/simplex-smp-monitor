@@ -67,7 +67,7 @@ export const NetworkOverview: React.FC<NetworkOverviewProps> = ({ analytics, net
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Consensus Info */}
-        <ConsensusInfo consensus={consensus} />
+        <ConsensusInfo consensus={consensus!} />
         
         {/* Network Config */}
         {network && (

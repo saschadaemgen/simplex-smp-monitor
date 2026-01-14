@@ -1,11 +1,11 @@
 import { useParams } from 'react-router-dom';
-const IntegrationHubPage = () => {
+const ConnectionMapPage = () => {
   const { id } = useParams<{ id: string }>();
   return (
     <div className="h-full bg-[#0a0a0f] p-6">
-      <h1 className="text-2xl font-bold text-[#88CED0]">Integration Hub</h1>
+      <h1 className="text-2xl font-bold text-[#88CED0]">Connection Map</h1>
       <p className="text-gray-500">Network: {id}</p>
     </div>
   );
 };
-export default IntegrationHubPage;
+export default ConnectionMapPage;

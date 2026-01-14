@@ -2,7 +2,7 @@
  * CircuitsList - All Circuits Display
  */
 import React, { useState, useMemo } from 'react';
-import { Circuit, CircuitPurpose } from '../types';
+import { Circuit } from '../types';
 import { CircuitCard } from './CircuitCard';
 import { CircuitStats } from './CircuitStats';
 import { CircuitFilters } from './CircuitFilters';
@@ -115,7 +115,7 @@ export const CircuitsList: React.FC<CircuitsListProps> = ({
         sortBy={sortBy}
         onStatusChange={setFilterStatus}
         onPurposeChange={setFilterPurpose}
-        onSortChange={setSortBy}
+        onSortChange={setSortBy as any}
         totalCount={circuits.length}
         filteredCount={filteredCircuits.length}
       />

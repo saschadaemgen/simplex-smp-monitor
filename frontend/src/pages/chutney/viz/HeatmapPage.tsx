@@ -1,7 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { BandwidthHeatmap } from '../../../components/chutneX/visualization';
-
-export default function HeatmapPage() {
-  const { id: networkId } = useParams<{ id: string }>();
-  return <BandwidthHeatmap networkId={networkId!} />;
-}
+const HeatmapPage = () => {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <div className="h-full bg-[#0a0a0f] p-6">
+      <h1 className="text-2xl font-bold text-[#88CED0]">Bandwidth Heatmap</h1>
+      <p className="text-gray-500">Network: {id}</p>
+    </div>
+  );
+};
+export default HeatmapPage;

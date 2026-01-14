@@ -403,10 +403,10 @@ function ConsensusCard({ consensus }: { consensus: NetworkAnalytics['consensus']
 // =============================================================================
 
 export default function ChutneXAnalytics() {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   
-  const [network, setNetwork] = useState<TorNetwork | null>(null);
+  const [_network, setNetwork] = useState<TorNetwork | null>(null);
   const [analytics, setAnalytics] = useState<NetworkAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

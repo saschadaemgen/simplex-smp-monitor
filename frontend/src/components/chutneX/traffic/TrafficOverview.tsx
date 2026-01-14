@@ -6,7 +6,7 @@ import { NetworkBandwidth, NodeStats } from '../types';
 import { BandwidthChart } from './BandwidthChart';
 import { 
   Activity, ArrowDown, ArrowUp, Server,
-  TrendingUp, Zap, Database
+  TrendingUp, Database
 } from 'lucide-react';
 
 interface TrafficOverviewProps {
@@ -127,7 +127,7 @@ const TrafficStatCard: React.FC<TrafficStatCardProps> = ({ icon, label, value, t
   <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-[#88CED0]/30 transition-colors">
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center gap-2">
-        {React.cloneElement(icon as React.ReactElement, { size: 18 })}
+        {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
         <span className="text-gray-400 text-sm">{label}</span>
       </div>
       {trend && (

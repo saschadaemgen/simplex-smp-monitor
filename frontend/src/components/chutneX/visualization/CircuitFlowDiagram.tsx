@@ -2,8 +2,8 @@
  * CircuitFlowDiagram - Animated Circuit Flow Visualization
  */
 import React from 'react';
-import { Circuit, CircuitHop } from '../types';
-import { ArrowRight, Zap } from 'lucide-react';
+import { Circuit } from '../types';
+import { Zap } from 'lucide-react';
 
 interface CircuitFlowDiagramProps {
   circuit: Circuit;

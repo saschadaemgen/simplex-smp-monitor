@@ -131,7 +131,7 @@ export default function Layout() {
 
             {/* Right: Navigation Menu - NEON BLUE */}
             <nav className="flex items-center">
-              {navItems.slice(0, 3).map((item, index) => {
+              {navItems.slice(0, 3).map((item, _index) => {
                 const active = isActive(item.to);
                 return (
                   <div key={item.to} className="flex items-center">
@@ -181,9 +181,9 @@ export default function Layout() {
               </div>
 
               {/* Rest of nav items */}
-              {navItems.slice(3).map((item, index) => {
+              {navItems.slice(3).map((item, _index) => {
                 const active = isActive(item.to);
-                const isLast = index === navItems.slice(3).length - 1;
+                const isLast = _index === navItems.slice(3).length - 1;
                 return (
                   <div key={item.to} className="flex items-center">
                     <NavLink

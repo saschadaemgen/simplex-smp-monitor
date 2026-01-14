@@ -1,7 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { CircuitFlowDiagram } from '../../../components/chutneX/visualization';
-
-export default function CircuitFlowPage() {
-  const { id: networkId } = useParams<{ id: string }>();
-  return <CircuitFlowDiagram networkId={networkId!} />;
-}
+const CircuitFlowPage = () => {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <div className="h-full bg-[#0a0a0f] p-6">
+      <h1 className="text-2xl font-bold text-[#88CED0]">Circuit Flow</h1>
+      <p className="text-gray-500">Network: {id}</p>
+    </div>
+  );
+};
+export default CircuitFlowPage;

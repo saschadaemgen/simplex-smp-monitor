@@ -1,7 +1,14 @@
+import React from 'react';
 import { useParams } from 'react-router-dom';
-import { TimingCorrelation } from '../../../components/chutneX/forensics';
 
-export default function TimingCorrelationPage() {
-  const { id: networkId } = useParams<{ id: string }>();
-  return <TimingCorrelation networkId={networkId!} />;
-}
+const TimingCorrelationPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <div className="h-full bg-[#0a0a0f] p-6">
+      <h1 className="text-2xl font-bold text-[#88CED0]">Timing Correlation Analysis</h1>
+      <p className="text-gray-500">Network: {id}</p>
+    </div>
+  );
+};
+
+export default TimingCorrelationPage;

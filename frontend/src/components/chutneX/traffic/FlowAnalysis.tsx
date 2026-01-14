@@ -4,8 +4,7 @@
 import React from 'react';
 import { FlowAnalysis as FlowAnalysisType } from '../types';
 import { 
-  Activity, ArrowRight, Clock, Database,
-  Layers, Filter
+  Activity, ArrowRight, Clock,
 } from 'lucide-react';
 
 interface FlowAnalysisProps {

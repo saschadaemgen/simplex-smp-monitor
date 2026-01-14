@@ -6,7 +6,7 @@ import { ConsensusInfo as ConsensusInfoType } from '../types';
 import { Shield, Clock, CheckCircle, AlertTriangle, Server } from 'lucide-react';
 
 interface ConsensusInfoProps {
-  consensus: ConsensusInfoType | null;
+  consensus: ConsensusInfoType ;
 }
 
 export const ConsensusInfo: React.FC<ConsensusInfoProps> = ({ consensus }) => {
@@ -37,7 +37,7 @@ export const ConsensusInfo: React.FC<ConsensusInfoProps> = ({ consensus }) => {
           <Shield className={isValid ? 'text-green-400' : 'text-red-400'} size={20} />
           <h3 className="font-medium text-white">Consensus</h3>
         </div>
-        <StatusBadge valid={isValid} expiringSoon={isExpiringSoon} />
+        <StatusBadge valid={isValid ?? false} expiringSoon={isExpiringSoon ?? false} />
       </div>
 
       <div className="space-y-3">
@@ -55,9 +55,9 @@ export const ConsensusInfo: React.FC<ConsensusInfoProps> = ({ consensus }) => {
         <div className="border-t border-gray-700 pt-3 mt-3">
           <div className="text-xs text-gray-500 mb-2">Validity Period</div>
           <div className="grid grid-cols-1 gap-2 text-sm">
-            <TimeRow label="Valid After" time={consensus.valid_after} />
-            <TimeRow label="Fresh Until" time={consensus.fresh_until} />
-            <TimeRow label="Valid Until" time={consensus.valid_until} highlight={isExpiringSoon} />
+            <TimeRow label="Valid After" time={consensus.valid_after ?? ""} />
+            <TimeRow label="Fresh Until" time={consensus.fresh_until ?? ""} />
+            <TimeRow label="Valid Until" time={consensus.valid_until ?? ""} highlight={isExpiringSoon ?? false} />
           </div>
         </div>
       </div>
@@ -106,7 +106,7 @@ const InfoRow: React.FC<InfoRowProps> = ({ icon, label, value }) => (
 
 interface TimeRowProps {
   label: string;
-  time: string | null;
+  time: string ;
   highlight?: boolean;
 }
 

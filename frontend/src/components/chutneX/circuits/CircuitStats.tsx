@@ -3,8 +3,8 @@
  */
 import React from 'react';
 import { 
-  GitBranch, CheckCircle, Clock, XCircle, 
-  PieChart, BarChart2, Flag
+  GitBranch, CheckCircle, 
+  BarChart2, Flag
 } from 'lucide-react';
 
 interface CircuitStatsProps {
@@ -46,7 +46,7 @@ export const CircuitStats: React.FC<CircuitStatsProps> = ({ stats }) => {
       {/* Summary Card */}
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
         <h4 className="font-medium text-white mb-4 flex items-center gap-2">
-          <GitBranch size={18} className="text-[#88CED0]" />
+          <GitBranch radius={4} className="text-[#88CED0]" />
           Circuit Summary
         </h4>
         
@@ -81,7 +81,7 @@ export const CircuitStats: React.FC<CircuitStatsProps> = ({ stats }) => {
       {/* By Status */}
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
         <h4 className="font-medium text-white mb-4 flex items-center gap-2">
-          <BarChart2 size={18} className="text-purple-400" />
+          <BarChart2 radius={4} className="text-purple-400" />
           By Status
         </h4>
         <div className="space-y-3">
@@ -112,7 +112,7 @@ export const CircuitStats: React.FC<CircuitStatsProps> = ({ stats }) => {
       {/* By Purpose */}
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 lg:col-span-2">
         <h4 className="font-medium text-white mb-4 flex items-center gap-2">
-          <Flag size={18} className="text-orange-400" />
+          <Flag radius={4} className="text-orange-400" />
           By Purpose
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -146,7 +146,7 @@ interface StatBoxProps {
 const StatBox: React.FC<StatBoxProps> = ({ icon, label, value }) => (
   <div className="bg-gray-900/50 rounded-lg p-3">
     <div className="flex items-center gap-2 mb-1">
-      {React.cloneElement(icon as React.ReactElement, { size: 16 })}
+      {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
       <span className="text-xs text-gray-400">{label}</span>
     </div>
     <div className="text-2xl font-bold font-mono text-white">{value}</div>

@@ -14,7 +14,7 @@ interface ForensicsOverviewProps {
 }
 
 export const ForensicsOverview: React.FC<ForensicsOverviewProps> = ({
-  networkId,
+  networkId: _,
   networkName,
   analysisAvailable,
 }) => {
@@ -24,7 +24,7 @@ export const ForensicsOverview: React.FC<ForensicsOverviewProps> = ({
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
         <div className="flex items-center gap-4 mb-4">
           <div className="p-3 bg-[#88CED0]/20 rounded-xl">
-            <Search size={32} className="text-[#88CED0]" />
+            <Search radius={4} className="text-[#88CED0]" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">Forensic Analysis</h2>
@@ -34,7 +34,7 @@ export const ForensicsOverview: React.FC<ForensicsOverviewProps> = ({
         
         {!analysisAvailable && (
           <div className="flex items-center gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <AlertTriangle className="text-yellow-400" size={20} />
+            <AlertTriangle className="text-yellow-400" radius={4} />
             <div>
               <p className="text-yellow-400 font-medium">Analysis Data Not Available</p>
               <p className="text-sm text-yellow-400/70">
@@ -88,7 +88,7 @@ export const ForensicsOverview: React.FC<ForensicsOverviewProps> = ({
       {/* Research Notes */}
       <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
         <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-          <Search size={16} className="text-[#88CED0]" />
+          <Search radius={4} className="text-[#88CED0]" />
           Research Applications
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-400">
@@ -137,7 +137,7 @@ const ForensicModule: React.FC<ForensicModuleProps> = ({ icon, title, descriptio
     <div className={`bg-gray-800/50 border border-gray-700 rounded-xl p-4 transition-all ${config.bg}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="p-2 bg-gray-700/50 rounded-lg">
-          {React.cloneElement(icon as React.ReactElement, { size: 24 })}
+          {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-6 h-6' })}
         </div>
         {config.badge}
       </div>

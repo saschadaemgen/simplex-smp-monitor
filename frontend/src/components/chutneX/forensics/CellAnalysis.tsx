@@ -29,7 +29,7 @@ export const CellAnalysis: React.FC<CellAnalysisProps> = ({ analysis }) => {
   if (!analysis) {
     return (
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-8 text-center">
-        <Layers size={48} className="mx-auto mb-4 text-gray-600" />
+        <Layers radius={4} className="mx-auto mb-4 text-gray-600" />
         <h4 className="font-medium text-white mb-2">Cell Analysis Not Available</h4>
         <p className="text-sm text-gray-500">
           Deep packet inspection data is required to analyze Tor cell types.
@@ -72,7 +72,7 @@ export const CellAnalysis: React.FC<CellAnalysisProps> = ({ analysis }) => {
       {/* Cell Type Distribution */}
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
         <h4 className="font-medium text-white mb-4 flex items-center gap-2">
-          <Layers size={18} className="text-purple-400" />
+          <Layers radius={4} className="text-purple-400" />
           Cell Type Distribution
         </h4>
 
@@ -127,7 +127,7 @@ export const CellAnalysis: React.FC<CellAnalysisProps> = ({ analysis }) => {
       {/* Analysis Notes */}
       <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
         <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-          <Info size={16} className="text-[#88CED0]" />
+          <Info radius={4} className="text-[#88CED0]" />
           Analysis Notes
         </h4>
         <div className="space-y-2 text-sm text-gray-400">
@@ -150,7 +150,7 @@ export const CellAnalysis: React.FC<CellAnalysisProps> = ({ analysis }) => {
       {analysis.tor_overhead_percent > 30 && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="text-yellow-400 flex-shrink-0" size={20} />
+            <AlertTriangle className="text-yellow-400 flex-shrink-0" radius={4} />
             <div>
               <h5 className="font-medium text-yellow-400 mb-1">High Protocol Overhead</h5>
               <p className="text-sm text-yellow-400/70">
@@ -175,7 +175,7 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ icon, label, value, warning = false }) => (
   <div className={`bg-gray-800/50 border rounded-xl p-4 ${warning ? 'border-yellow-500/50' : 'border-gray-700'}`}>
     <div className="flex items-center gap-2 mb-2">
-      {React.cloneElement(icon as React.ReactElement, { size: 16 })}
+      {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
       <span className="text-gray-400 text-sm">{label}</span>
     </div>
     <div className={`text-xl font-bold font-mono ${warning ? 'text-yellow-400' : 'text-white'}`}>
