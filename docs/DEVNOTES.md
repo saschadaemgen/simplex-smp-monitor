@@ -1,7 +1,8 @@
 # Developer Notes
 
 > **Internal technical documentation for developers**  
-> Contains implementation details, architecture decisions, and troubleshooting guides.
+> Contains implementation details, architecture decisions, and troubleshooting guides.  
+> Last Updated: January 15, 2026
 
 ---
 
@@ -18,15 +19,15 @@
 9. [Verification Tests](#9-verification-tests)
 10. [Implementation Changelog](#10-implementation-changelog)
 11. [Docker Manager Module](#11-docker-manager-module)
+12. [Quick Reference](#12-quick-reference)
 
 ---
 
 ## 1. Project Structure
 
-### Docker Images Location
+### 1.1 Docker Images Location
 
 All custom Docker images are centralized in `docker/images/`:
-
 ```
 docker/images/
 ├── chutnex/              # Private Tor Network Nodes
@@ -54,16 +55,59 @@ docker/images/
     └── entrypoint.sh
 ```
 
-### Documentation Structure (Updated 2026-01-14)
-
+### 1.2 Documentation Structure
 ```
 docs/
 ├── CHUTNEX.md              # ChutneX Technical Documentation
-├── CHUTNEX_ANALYTICS.md    # Analytics Frontend Development Guide (NEW)
+├── CHUTNEX_ANALYTICS.md    # Analytics Frontend Development Guide
 └── DEVNOTES.md             # This file - Developer Notes
 ```
 
-### Why This Structure?
+### 1.3 Frontend Structure
+```
+frontend/src/
+├── api/                      # API Client Functions
+│   ├── chutney_analytics.ts  # Analytics API
+│   ├── docker.ts             # Docker Manager API
+│   └── ...
+├── components/
+│   ├── chutneX/              # ChutneX Reusable Components
+│   │   ├── circuits/         # Circuit components
+│   │   ├── forensics/        # Forensics components
+│   │   ├── integration/      # Integration components
+│   │   ├── nodes/            # Node components
+│   │   ├── overview/         # Overview components
+│   │   ├── reports/          # Report components
+│   │   ├── traffic/          # Traffic components
+│   │   ├── visualization/    # Visualization components
+│   │   ├── index.ts          # Component exports
+│   │   └── types.ts          # Shared types
+│   ├── layout/
+│   │   └── Layout.tsx        # Main layout with navigation
+│   └── navigation/
+│       └── ChutneXMegaMenu.tsx  # 120-feature navigation
+├── pages/
+│   ├── chutney/              # ChutneX Analytics Pages
+│   │   ├── analytics/        # Analytics section (3 pages)
+│   │   ├── circuits/         # Circuits section (6 pages)
+│   │   ├── forensics/        # Forensics section (4 pages)
+│   │   ├── integration/      # Integration section (3 pages)
+│   │   ├── nodes/            # Nodes section (6 pages)
+│   │   ├── overview/         # Overview section (4 pages)
+│   │   ├── reports/          # Reports section (1 page)
+│   │   ├── traffic/          # Traffic section (7 pages)
+│   │   └── viz/              # Visualization section (3 pages)
+│   ├── ChutneXAnalytics.tsx  # Main analytics entry
+│   └── ...
+├── i18n/
+│   ├── index.ts              # i18n configuration
+│   └── locales/
+│       ├── de.json           # German translations
+│       └── en.json           # English translations
+└── App.tsx                   # Router configuration
+```
+
+### 1.4 Why This Structure?
 
 **Migration from v0.1.11:** Docker files were originally scattered:
 - `servers/docker/` → moved to `docker/images/simplex-smp/`
@@ -79,7 +123,7 @@ docs/
 
 ## 2. Docker Architecture
 
-### Images Overview
+### 2.1 Images Overview
 
 | Image | Base | Purpose | Build Command |
 |-------|------|---------|---------------|
@@ -91,8 +135,7 @@ docs/
 | `simplex-ntf` | debian:bookworm-slim | Notification Server | `docker build -t simplex-ntf docker/images/simplex-ntf/` |
 | `chutnex` | debian:bookworm-slim | Tor Node (DA/Guard/Middle/Exit/Client) | `docker build -t chutnex docker/images/chutnex/` |
 
-### Build All Images
-
+### 2.2 Build All Images
 ```bash
 cd ~/simplex-smp-monitor
 
@@ -106,11 +149,28 @@ done
 docker compose build app --no-cache
 ```
 
+### 2.3 Technology Stack
+
+| Layer | Technology | Version |
+|-------|------------|---------|
+| **Backend** | Django | 6.x |
+| **Backend** | Django REST Framework | 3.x |
+| **Backend** | Django Channels | 4.x |
+| **Backend** | stem (Tor Controller) | 1.8.x |
+| **Frontend** | React | 18.x |
+| **Frontend** | TypeScript | 5.x |
+| **Frontend** | Vite | 7.x |
+| **Frontend** | Tailwind CSS | 3.x |
+| **Frontend** | Recharts | 2.x |
+| **Database** | PostgreSQL | 15.x |
+| **Cache** | Redis | 7.x |
+| **Container** | Docker | 24.x |
+
 ---
 
 ## 3. Network Configuration
 
-### Docker Networks
+### 3.1 Docker Networks
 
 | Network | Purpose | Subnet | Created By |
 |---------|---------|--------|------------|
@@ -119,7 +179,7 @@ docker compose build app --no-cache
 | `simplex-servers` | SimpleX Server containers | Auto | ServerDockerManager |
 | `chutnex-{slug}` | ChutneX private Tor networks | `10.99.0.0/16` | ChutneXDockerManager |
 
-### Container-to-Container Communication
+### 3.2 Container-to-Container Communication
 
 **Problem solved in v0.1.12:**
 
@@ -128,21 +188,19 @@ Django app runs in `simplex-monitor-network`, but SimpleX clients run in `simple
 **Solution:**
 
 The app must be connected to the `simplex-clients` network:
-
 ```bash
 docker network connect simplex-clients simplex-monitor-app
 ```
 
-**Automatic connection:** The ClientDockerManager should connect the app automatically when creating clients.
+**Automatic connection:** The ClientDockerManager connects the app automatically when creating clients.
 
-### ChutneX Dual Network for Clients
+### 3.3 ChutneX Dual Network for Clients
 
 SimpleX clients in ChutneX mode need access to:
 1. **Bridge network** - for host port mapping (WebSocket access from Django)
 2. **ChutneX network** - for Tor routing through private network
 
 **Implementation in `clients/services/docker_manager.py`:**
-
 ```python
 # Create container in bridge network first (enables port mapping)
 container = self.client.containers.create(
@@ -161,8 +219,7 @@ if connection_mode == 'chutnex_internal':
 
 ## 4. WebSocket Communication
 
-### Architecture
-
+### 4.1 Architecture
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    DJANGO APP                               │
@@ -187,10 +244,9 @@ if connection_mode == 'chutnex_internal':
 └─────────────────┘          └─────────────────────┘
 ```
 
-### WebSocket URL Detection
+### 4.2 WebSocket URL Detection
 
 **File:** `clients/models.py`
-
 ```python
 @property
 def websocket_url(self):
@@ -209,14 +265,13 @@ def websocket_url(self):
 
 ## 5. ChutneX Private Tor Network
 
-### DA Synchronization Problem
+### 5.1 DA Synchronization Problem
 
 **Original Issue:** Directory Authorities started simultaneously, each writing fingerprint to shared volume but starting Tor immediately. Result: Each DA only knew itself → consensus failure.
 
 **Solution:** All nodes wait for ALL DAs to register before starting Tor.
 
 **File:** `docker/images/chutnex/entrypoint.sh`
-
 ```bash
 # Phase 1: DA Registration
 if [ "$NODE_TYPE" = "da" ]; then
@@ -236,10 +291,9 @@ cat /status/dir-authorities >> /etc/tor/torrc
 exec tor -f /etc/tor/torrc
 ```
 
-### SimpleX Client ChutneX Integration
+### 5.2 SimpleX Client ChutneX Integration
 
 **File:** `docker/images/simplex-cli/entrypoint.sh`
-
 ```bash
 if [ "${CHUTNEX_MODE}" = "1" ]; then
     # Forward localhost:9050 to ChutneX client node's SOCKS
@@ -248,10 +302,9 @@ if [ "${CHUTNEX_MODE}" = "1" ]; then
 fi
 ```
 
-### SMP Server ChutneX Integration
+### 5.3 SMP Server ChutneX Integration
 
 **File:** `docker/images/simplex-smp-tor/entrypoint.sh`
-
 ```bash
 if [ "${CHUTNEX_MODE}" = "1" ]; then
     # Wait for DirAuthorities
@@ -268,10 +321,9 @@ EOF
 fi
 ```
 
-### Volume Mount for ChutneX Servers
+### 5.4 Volume Mount for ChutneX Servers
 
 **File:** `servers/services/docker_manager.py`
-
 ```python
 if hosting_mode == 'chutnex' and server.chutnex_network:
     status_volume = f"chutnex-status-{server.chutnex_network.slug}"
@@ -282,157 +334,116 @@ if hosting_mode == 'chutnex' and server.chutnex_network:
 
 ## 6. ChutneX Analytics Frontend
 
-> **⚠️ NEW SECTION (2026-01-14)**
-> **Detaillierte Dokumentation:** siehe `docs/CHUTNEX_ANALYTICS.md`
+> **Detailed Documentation:** See `docs/CHUTNEX_ANALYTICS.md`
 
-### 6.1 Übersicht
+### 6.1 Overview
 
-ChutneX Analytics ist die Forensik- und Analyse-Suite für private Tor-Netzwerke mit:
-- **120 Features** in 12 Kategorien
+ChutneX Analytics is the forensics and analysis suite for private Tor networks:
+- **120 Features** across 12 categories
 - React + TypeScript + Recharts
-- i18n Support (DE/EN)
+- i18n Support (EN/DE)
 - Neon Blue Design (#88CED0)
 
-### 6.2 Entwicklungsstrategie
-
+### 6.2 Development Strategy (Updated January 15, 2026)
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                 ENTWICKLUNGSPHASEN                              │
+│                    DEVELOPMENT PHASES                           │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  PHASE 1: Frontend First (AKTUELL)                              │
-│  ├── UI-Komponenten mit Mock/Demo-Daten                         │
-│  ├── Alle Seiten layouten und stylen                            │
-│  ├── i18n für alle Texte                                        │
-│  └── Navigation und Routing                                     │
+│  PHASE 1: Frontend Placeholders (COMPLETED)                     │
+│  ├── All 120 menu items created                                 │
+│  ├── Navigation and routing complete                            │
+│  ├── Simple placeholder pages for all sections                  │
+│  └── TypeScript compilation: PASSING                            │
 │                                                                 │
-│  PHASE 2: Backend Integration                                   │
-│  ├── API-Endpoints für echte Daten                              │
-│  ├── stem (Tor Control Port) Integration                        │
-│  ├── Datenbank-Modelle für Forensik                             │
-│  └── WebSocket für Live-Updates                                 │
+│  PHASE 2: Incremental Full Development (CURRENT)                │
+│  ├── Develop each page fully (frontend + backend)               │
+│  ├── Test thoroughly before moving to next page                 │
+│  ├── Real data integration per page                             │
+│  └── Documentation updated per feature                          │
 │                                                                 │
-│  PHASE 3: Zusatzsoftware                                        │
-│  ├── tcpdump/tshark für Packet Capture                          │
-│  ├── Zeek für Protocol Analysis                                 │
-│  ├── Suricata für IDS/Alerts                                    │
-│  └── Neo4j für Graph-Datenbank                                  │
+│  PHASE 3: Additional Software Integration                       │
+│  ├── tcpdump/tshark for Packet Capture                          │
+│  ├── Zeek for Protocol Analysis                                 │
+│  ├── Suricata for IDS/Alerts                                    │
+│  └── Neo4j for Graph Database                                   │
 │                                                                 │
 │  PHASE 4: Enterprise Features                                   │
-│  ├── ML-basierte Anomalie-Erkennung                             │
-│  ├── Automatisierte Reports                                     │
+│  ├── ML-based Anomaly Detection                                 │
+│  ├── Automated Reports                                          │
 │  ├── Prometheus/Grafana Integration                             │
-│  └── Multi-Network Vergleiche                                   │
+│  └── Multi-Network Comparisons                                  │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 6.3 Aktuelle Seiten (Stand: 2026-01-14)
+### 6.3 Current Page Status (January 15, 2026)
 
-| Seite | Route | Daten | Status |
-|-------|-------|-------|--------|
-| AnalyticsDashboard | `/tor-networks/:id/analytics` | Echt | ✅ LIVE |
-| NodeGridPage | `/tor-networks/:id/analytics/nodes` | Echt | ✅ ALPHA |
-| NodeBandwidthPage | `/tor-networks/:id/analytics/nodes/bandwidth` | Echt | ✅ ALPHA |
-| CircuitsListPage | `/tor-networks/:id/analytics/circuits` | Echt | ✅ ALPHA |
-| CircuitDetailPage | `/tor-networks/:id/analytics/circuits/card` | Echt | ✅ ALPHA |
-| CircuitPathPage | `/tor-networks/:id/analytics/circuits/path` | Echt | ✅ ALPHA |
-| CircuitStatsPage | `/tor-networks/:id/analytics/circuits/stats` | Echt | ✅ ALPHA |
-| CircuitFiltersPage | `/tor-networks/:id/analytics/circuits/filters` | Echt | ✅ ALPHA |
-| CircuitEventsPage | `/tor-networks/:id/analytics/circuits/events` | Echt | ✅ ALPHA |
-| TrafficOverviewPage | `/tor-networks/:id/analytics/traffic` | Echt | ✅ ALPHA |
-| BandwidthChartPage | `/tor-networks/:id/analytics/traffic/bandwidth` | Echt | ✅ ALPHA |
-| ForensicsOverviewPage | `/tor-networks/:id/analytics/forensics` | **MOCK** | ✅ ALPHA |
+| Page | Route | Status |
+|------|-------|--------|
+| CircuitsListPage | `/tor-networks/:id/analytics/circuits` | ✅ FULLY IMPLEMENTED |
+| All other pages | Various | 📋 Placeholder (awaiting development) |
 
-### 6.4 Mock vs Echte Daten
+**Strategy Change:** Previously we tried to build all UI first with mock data. Now we develop each page completely (frontend + backend + tests) before moving to the next.
 
-**⚠️ WICHTIG für Entwickler:**
-
-```typescript
-// ECHTE DATEN (von API):
-- nodes.stats[]
-- circuits.circuits[]
-- bandwidth.total_bytes_read/written
-- bandwidth.by_node_type
-
-// MOCK DATEN (Math.random()):
-// In ForensicsOverviewPage.tsx:
-entryLatency: Math.random() * 50 + 10,
-exitLatency: Math.random() * 80 + 20,
-anomalyScore: Math.random() * 100,
-timingAnomalies: Math.floor(Math.random() * 5),
-patternMatches: Math.floor(Math.random() * 12),
-suspiciousFlows: Math.floor(Math.random() * 3),
-
-// Hardcoded Demo-Daten:
-- Investigation Queue Items (INV-001, INV-002, etc.)
-- Security Radar Scores
-- Threat Level Indicators
-- Scatter Plot für Korrelation
-```
-
-**Grund:** Backend-Endpoints für Forensik noch nicht implementiert. 
-Siehe Phase 2 in `CHUTNEX_ANALYTICS.md`.
-
-### 6.5 Was mit stem (jetzt schon) möglich ist
-
+### 6.4 What stem Can Do (Already Installed)
 ```python
-# Bereits installiert: stem (Python Tor Controller)
+# Python Tor Controller library
 from stem.control import Controller, EventType
 
-# Diese Events können wir live abfangen:
+# Available event listeners:
 controller.add_event_listener(callback, EventType.CIRC)      # Circuit Events
 controller.add_event_listener(callback, EventType.STREAM)    # Stream Events  
 controller.add_event_listener(callback, EventType.BW)        # Bandwidth
 controller.add_event_listener(callback, EventType.CELL_STATS) # Cell Stats
 ```
 
-**Damit können wir bauen (ohne Zusatzsoftware):**
+**Possible without additional software:**
 
-| Feature | Machbar? | Wie? |
-|---------|----------|------|
-| Timing Correlation | ✅ JA | Circuit create/close Timestamps vergleichen |
-| Circuit Event Log | ✅ JA | Alle CIRC Events speichern |
-| Basic Anomaly Detection | ✅ JA | Statistische Analyse (stddev, outliers) |
-| Path Analysis | ✅ JA | Welche Nodes werden wie oft genutzt |
-| Bandwidth per Circuit | ✅ JA | STREAM Events tracken |
+| Feature | Possible? | How? |
+|---------|-----------|------|
+| Timing Correlation | ✅ YES | Compare circuit create/close timestamps |
+| Circuit Event Log | ✅ YES | Store all CIRC events |
+| Basic Anomaly Detection | ✅ YES | Statistical analysis (stddev, outliers) |
+| Path Analysis | ✅ YES | Track which nodes are used how often |
+| Bandwidth per Circuit | ✅ YES | Track STREAM events |
 
-### 6.6 Zusatzsoftware (Phase 3)
+### 6.5 Additional Software (Phase 3)
 
-| Tool | Verwendung | Priority | Installation |
-|------|------------|----------|--------------|
+| Tool | Purpose | Priority | Installation |
+|------|---------|----------|--------------|
 | **tcpdump** | Raw Packet Capture | HIGH | `apt install tcpdump` |
 | **tshark** | Wireshark CLI | HIGH | `apt install tshark` |
-| **Zeek** | Protocol Analysis | MEDIUM | Siehe CHUTNEX_ANALYTICS.md |
+| **Zeek** | Protocol Analysis | MEDIUM | See CHUTNEX_ANALYTICS.md |
 | **Suricata** | IDS/IPS Alerts | MEDIUM | `apt install suricata` |
 | **Neo4j** | Graph Database | LOW | Debian repo |
 
-### 6.7 Häufige Analytics-Probleme
+### 6.6 Common Analytics Issues
 
-**Import-Duplikate in App.tsx:**
+**Import duplicates in App.tsx:**
 ```bash
-# Prüfen
+# Check for duplicates
 grep -n "ComponentName" frontend/src/App.tsx
 
-# Duplikat entfernen (N = Zeilennummer)
+# Remove duplicate (N = line number)
 sed -i 'Nd' frontend/src/App.tsx
 ```
 
-**Route-Struktur kaputt:**
+**Route structure broken:**
 ```bash
-# Zeilen anzeigen
+# Show lines around error
 sed -n '190,210p' frontend/src/App.tsx
 
-# Kaputte Zeile ersetzen
+# Replace broken line
 sed -i '193c\<Route path="..." element={...} />' frontend/src/App.tsx
 ```
 
-**Chart rendert nicht:**
+**Chart not rendering:**
 ```tsx
-// FALSCH:
+// WRONG:
 <ResponsiveContainer><LineChart /></ResponsiveContainer>
 
-// RICHTIG:
+// CORRECT:
 <div className="h-[300px]">
   <ResponsiveContainer width="100%" height="100%">
     <LineChart />
@@ -440,26 +451,23 @@ sed -i '193c\<Route path="..." element={...} />' frontend/src/App.tsx
 </div>
 ```
 
-### 6.8 Workflow für neue Seiten
-
+### 6.7 Workflow for New Pages
 ```bash
-# 1. Seite erstellen
+# 1. Create page file
 cat > frontend/src/pages/chutney/{category}/{Name}Page.tsx
 
-# 2. Übersetzungen (de.json + en.json)
-python3 << 'PYEOF'
-import json
-# ... add translations
-PYEOF
+# 2. Add translations (de.json + en.json) if using i18n
 
-# 3. Route in App.tsx
-sed -i '/const CircuitsListPage/a const NewPage = lazy(...);' App.tsx
+# 3. Add route in App.tsx
+# const NewPage = lazy(() => import('./pages/chutney/...'));
+# <Route path="..." element={<NewPage />} />
 
-# 4. MegaMenu Badge (SOON → ALPHA)
-sed -i "s/badge: 'SOON', disabled: true/badge: 'ALPHA'/" ChutneXMegaMenu.tsx
+# 4. Update MegaMenu badge (SOON → ALPHA)
+sed -i "s/badge: 'SOON', disabled: true/badge: 'ALPHA'/" \
+  frontend/src/components/navigation/ChutneXMegaMenu.tsx
 
-# 5. Dokumentation updaten!
-# docs/CHUTNEX_ANALYTICS.md - To-Do Liste
+# 5. Update documentation!
+# docs/CHUTNEX_ANALYTICS.md - To-Do List
 # docs/DEVNOTES.md - Changelog
 ```
 
@@ -467,15 +475,14 @@ sed -i "s/badge: 'SOON', disabled: true/badge: 'ALPHA'/" ChutneXMegaMenu.tsx
 
 ## 7. Environment Detection
 
-### Development vs Docker
+### 7.1 Development vs Docker
 
 | Environment | Django runs on | WebSocket URL | Redis Host |
 |-------------|----------------|---------------|------------|
 | Development | Host machine | `ws://localhost:{port}` | `127.0.0.1` |
 | Docker | Container | `ws://simplex-client-{slug}:{port}` | `redis` |
 
-### Detection Method
-
+### 7.2 Detection Method
 ```python
 import os
 
@@ -492,7 +499,7 @@ else:
 
 ## 8. Known Issues & Solutions
 
-### Issue: App can't reach SimpleX clients
+### 8.1 App Can't Reach SimpleX Clients
 
 **Symptom:** WebSocket error: Connect call failed ('127.0.0.1', 3031)
 
@@ -503,7 +510,7 @@ else:
 docker network connect simplex-clients simplex-monitor-app
 ```
 
-### Issue: ChutneX network already exists
+### 8.2 ChutneX Network Already Exists
 
 **Symptom:** 403 Forbidden - Pool overlaps with other one
 
@@ -513,7 +520,7 @@ docker network rm chutnex-{slug}
 docker network prune -f
 ```
 
-### Issue: Container name conflict
+### 8.3 Container Name Conflict
 
 **Symptom:** 409 Conflict - container name already in use
 
@@ -524,7 +531,7 @@ docker ps -a --format "{{.ID}} {{.Names}}" | grep simplex-client
 docker rm -f {container_id}
 ```
 
-### Issue: Frontend not updating in Docker
+### 8.4 Frontend Not Updating in Docker
 
 **Symptom:** Old UI after code changes
 
@@ -535,30 +542,30 @@ docker compose build app --no-cache
 docker compose up -d
 ```
 
-### Issue: App.tsx Import/Route Duplikate (Analytics)
+### 8.5 App.tsx Import/Route Duplicates
 
-**Symptom:** Build-Fehler wegen doppelter Definitionen
+**Symptom:** Build error due to duplicate definitions
 
-**Ursache:** `sed -i` Befehle haben mehrfach eingefügt
+**Cause:** `sed -i` commands inserted multiple times
 
-**Lösung:**
+**Solution:**
 ```bash
-# Duplikate finden
+# Find duplicates
 grep -n "PageName" frontend/src/App.tsx
 
-# Duplikat-Zeile löschen (N = Zeilennummer)
+# Delete duplicate line (N = line number)
 sed -i 'Nd' frontend/src/App.tsx
 ```
 
-### Issue: Chart rendert nicht (Analytics)
+### 8.6 Chart Not Rendering
 
-**Symptom:** ResponsiveContainer zeigt nichts
+**Symptom:** ResponsiveContainer shows nothing
 
-**Ursache:** Parent hat keine feste Höhe
+**Cause:** Parent has no fixed height
 
-**Lösung:**
+**Solution:**
 ```tsx
-// Parent braucht feste Höhe!
+// Parent needs fixed height!
 <div className="h-[300px]">
   <ResponsiveContainer width="100%" height="100%">
     <LineChart />
@@ -566,14 +573,30 @@ sed -i 'Nd' frontend/src/App.tsx
 </div>
 ```
 
+### 8.7 TypeScript Errors in Analytics Pages
+
+**Common errors and fixes:**
+
+| Error | Solution |
+|-------|----------|
+| `'X' is declared but never used` | Prefix with underscore: `_X` |
+| `Type 'null' is not assignable` | Add null coalescing: `value ?? defaultValue` |
+| `cloneElement type error` | Cast as `React.ReactElement<any>` |
+| `useState destructuring syntax` | Ensure comma: `const [a, setA] = useState()` |
+
+### 8.8 Recharts Circular Dependency Warning
+
+**Symptom:** Vite shows circular dependency warning during build
+
+**Solution:** This is a known Recharts issue. The warning is non-blocking and doesn't affect functionality. Can be safely ignored.
+
 ---
 
 ## 9. Verification Tests
 
-### ChutneX Isolation Test
+### 9.1 ChutneX Isolation Test
 
 Verifies that ChutneX .onion addresses are NOT reachable from public Tor.
-
 ```bash
 #!/bin/bash
 # verify_chutnex_isolation.sh
@@ -605,26 +628,7 @@ docker exec simplex-client-client-001 \
 - Test 1: `Connection timed out` or `Can't complete SOCKS5 connection` = ✅ PASS
 - Test 2: `Empty reply from server` = ✅ PASS (connection works, SMP doesn't speak HTTP)
 
-**Test Results (2026-01-12):**
-```
-============================================================
-🔬 ChutneX ISOLATION VERIFICATION
-============================================================
-Testing .onion: kbxecaukami3lotmtrwez3mdgf65cprhyuwjs5fzlaaw35rqtpaor6yd.onion
-
-TEST 1: Public Tor Access (should FAIL)
-----------------------------------------
-curl: (28) Connection timed out after 10001 milliseconds
-✅ PASS: Public Tor cannot reach ChutneX .onion
-
-TEST 2: ChutneX Client Access (should SUCCEED)
------------------------------------------------
-curl: (52) Empty reply from server
-✅ Connection established (server doesn't speak HTTP)
-```
-
-### Network Connectivity Test
-
+### 9.2 Network Connectivity Test
 ```bash
 # Test from Django container to SimpleX client
 docker exec simplex-monitor-app nc -zv simplex-client-client-001 3031
@@ -632,8 +636,7 @@ docker exec simplex-monitor-app nc -zv simplex-client-client-001 3031
 # Expected: Connection to simplex-client-client-001 3031 port [tcp/*] succeeded!
 ```
 
-### WebSocket URL Test
-
+### 9.3 WebSocket URL Test
 ```bash
 # Verify WebSocket URL in Docker
 docker compose exec app python manage.py shell -c "
@@ -647,78 +650,112 @@ if c:
 # Expected in Dev:    ws://localhost:3031
 ```
 
-### Redis Connection Test
-
+### 9.4 Redis Connection Test
 ```bash
 docker exec simplex-monitor-redis redis-cli ping
 # Expected: PONG
 ```
 
-### Analytics Frontend Test
-
+### 9.5 Analytics Frontend Test
 ```bash
-# Dev Server starten
+# Start dev server
 cd ~/simplex-smp-monitor/frontend
 npm run dev
 
-# Im Browser öffnen:
+# Open in browser:
 # http://localhost:5173/tor-networks/{network-id}/analytics
 
-# Prüfen:
-# - MegaMenu öffnet sich
-# - Network Dropdown funktioniert
-# - Charts laden
-# - Sprachumschaltung DE/EN funktioniert
+# Verify:
+# - MegaMenu opens
+# - Network dropdown works
+# - Charts load (on implemented pages)
+# - Language switch EN/DE works
+```
+
+### 9.6 TypeScript Compilation Test
+```bash
+cd ~/simplex-smp-monitor/frontend
+
+# Check for TypeScript errors
+npx tsc --noEmit
+
+# Expected: No errors
 ```
 
 ---
 
 ## 10. Implementation Changelog
 
+### 2026-01-15: TypeScript Fixes & Strategy Change
+
+**Major Refactoring:**
+- Converted 40+ complex placeholder pages to simple stubs
+- Changed development strategy: develop each page fully before moving to next
+- Fixed all TypeScript compilation errors
+
+**TypeScript Fixes Applied:**
+- React.cloneElement type casting with `<any>`
+- Null coalescing for optional props (`?? false`, `?? ''`)
+- Unused variable prefixing with underscore (`_networkId`, `_circuits`)
+- Fixed useState destructuring syntax errors
+- Removed unused imports across all files
+
+**Files Changed:** 57
+- 17 ChutneX components
+- 37 Page files
+- 1 Layout component
+- 1 Main analytics page
+- 1 README.md (Django version 5.x → 6.x)
+
+**Build Status:**
+- ✅ TypeScript compilation: PASS
+- ✅ Vite build: SUCCESS
+- ⚠️ Recharts circular dependency warning (known issue, non-blocking)
+
 ### 2026-01-14: ChutneX Analytics Forensics + Documentation
 
-**Neue Seiten:**
-- ForensicsOverviewPage mit Timing Charts, Radar, Scatter Plot
-- BandwidthChartPage mit 4 Chart-Typen und Brush-Zoom
+**New Pages:**
+- ForensicsOverviewPage with Timing Charts, Radar, Scatter Plot
+- BandwidthChartPage with 4 chart types and Brush zoom
 
 **Fixes:**
-- App.tsx Route-Duplikate entfernt
-- MegaMenu i18n komplett (DE/EN)
+- App.tsx route duplicates removed
+- MegaMenu i18n complete (DE/EN)
 
-**Dokumentation:**
-- `docs/CHUTNEX_ANALYTICS.md` erstellt (Frontend Development Guide)
-- `docs/DEVNOTES.md` erweitert mit Analytics-Sektion (Sektion 6)
-- `docs/CHUTNEX.md` aktualisiert
+**Documentation:**
+- `docs/CHUTNEX_ANALYTICS.md` created (Frontend Development Guide)
+- `docs/DEVNOTES.md` extended with Analytics section (Section 6)
+- `docs/CHUTNEX.md` updated
 
-**Bekannte Issues:**
-- ForensicsOverviewPage verwendet Mock-Daten (Math.random())
-- Backend-Endpoints für Forensik noch nicht implementiert
+**Known Issues:**
+- ForensicsOverviewPage uses mock data (Math.random())
+- Backend endpoints for forensics not yet implemented
 
-### 2026-01-13: Traffic & Circuits Seiten
+### 2026-01-13: Traffic & Circuits Pages
 
-**Neue Seiten:**
+**New Pages:**
 - TrafficOverviewPage
 - CircuitsListPage, CircuitDetailPage
 - CircuitPathPage, CircuitStatsPage
 - CircuitFiltersPage, CircuitEventsPage
 
 **Features:**
-- i18n System mit react-i18next
+- i18n system with react-i18next
 - Language Switcher in Header
-- Auto-Refresh für alle Seiten
+- Auto-refresh for all pages
 
 ### 2026-01-12: ChutneX Analytics Initial
 
-**Neue Features:**
-- ChutneXMegaMenu mit 120 Features in 12 Kategorien
-- AnalyticsDashboard Hauptseite
+**New Features:**
+- ChutneXMegaMenu with 120 features in 12 categories
+- AnalyticsDashboard main page
 - NodeGridPage, NodeBandwidthPage
 - API Client (chutney_analytics.ts)
 
-**Architektur:**
+**Architecture:**
 - Neon Blue Design System (#88CED0)
-- Recharts für Visualisierungen
-- React Router für Navigation
+- Recharts for visualizations
+- React Router for navigation
 
 ### 2026-01-12: WebSocket URL Environment Detection
 
@@ -776,8 +813,7 @@ npm run dev
 
 ## 11. Docker Manager Module
 
-### Architecture Overview
-
+### 11.1 Architecture Overview
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     FRONTEND (React)                        │
@@ -814,7 +850,7 @@ npm run dev
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Key Files
+### 11.2 Key Files
 
 | File | Purpose |
 |------|---------|
@@ -824,12 +860,11 @@ npm run dev
 | `frontend/src/pages/Docker.tsx` | React component (900+ lines) |
 | `frontend/src/api/docker.ts` | TypeScript API client |
 
-### Critical Implementation: Non-Blocking Stats
+### 11.3 Critical Implementation: Non-Blocking Stats
 
 **Problem (v0.1.14):** Docker SDK `container.stats(stream=True)` blocks the entire Django process, causing all requests to hang for 20-30 seconds.
 
 **Solution (v0.1.12-alpha):** Two-sample approach with immediate stream close:
-
 ```python
 # docker_manager/services/docker_service.py
 
@@ -858,12 +893,11 @@ def get_container_stats(self, container_id: str) -> dict:
 
 **Why 2 samples?** Docker stats with `stream=False` returns a single snapshot with zero deltas. CPU calculation requires the difference between two measurements.
 
-### Critical Implementation: Parallel Stats Collection
+### 11.4 Critical Implementation: Parallel Stats Collection
 
 **Problem:** Fetching stats for 20 containers sequentially = 20 × 200ms = 4 seconds blocking.
 
 **Solution:** ThreadPoolExecutor for parallel collection:
-
 ```python
 def get_all_stats(self) -> list:
     running = [c for c in self.client.containers.list() if c.status == 'running']
@@ -884,10 +918,9 @@ def get_all_stats(self) -> list:
     return results
 ```
 
-### Tor/ChutneX Container Detection
+### 11.5 Tor/ChutneX Container Detection
 
 **Frontend logic in `Docker.tsx`:**
-
 ```typescript
 function isTorContainer(container: {
   name: string;
@@ -914,8 +947,7 @@ function isTorContainer(container: {
 - 🧅 emoji badge on container name
 - Network badges in purple in expanded details
 
-### API Endpoints Reference
-
+### 11.6 API Endpoints Reference
 ```
 GET  /api/docker/info/                    → Docker host info
 GET  /api/docker/containers/              → List containers
@@ -931,8 +963,7 @@ POST /api/docker/bulk/                    → {container_ids: [...], action: "..
 POST /api/docker/prune/                   → System prune
 ```
 
-### Frontend Polling Strategy
-
+### 11.7 Frontend Polling Strategy
 ```typescript
 // Stats: 5 second interval (CPU/Memory change frequently)
 useEffect(() => {
@@ -947,7 +978,7 @@ useEffect(() => {
 }, []);
 ```
 
-### Known Limitations
+### 11.8 Known Limitations
 
 1. **No WebSocket** - Currently polling-based, not real-time push
 2. **No container creation** - Can only manage existing containers
@@ -955,7 +986,7 @@ useEffect(() => {
 4. **No exec/shell** - Cannot execute commands in containers
 5. **Stats delay** - 100ms delay per container for accurate CPU calculation
 
-### Future Improvements
+### 11.9 Future Improvements
 
 | Feature | Priority | Complexity |
 |---------|----------|------------|
@@ -966,23 +997,11 @@ useEffect(() => {
 | Volume management | Low | Medium |
 | Docker Compose support | Low | High |
 
-### Changelog
-
-**v0.1.12-alpha (2026-01-12)**
-- Initial Docker Manager module
-- Non-blocking stats with 2-sample approach
-- Parallel stats collection with ThreadPoolExecutor
-- Tor/ChutneX visual detection
-- Table and card views
-- Bulk operations
-- Container logs modal
-
 ---
 
-## Quick Reference
+## 12. Quick Reference
 
-### Build Commands
-
+### 12.1 Build Commands
 ```bash
 # All custom images
 for img in chutnex simplex-cli simplex-smp simplex-smp-tor simplex-xftp simplex-ntf; do
@@ -997,8 +1016,7 @@ docker compose build app --no-cache
 docker compose up -d
 ```
 
-### Debug Commands
-
+### 12.2 Debug Commands
 ```bash
 # App logs
 docker compose logs app --tail 50
@@ -1016,8 +1034,7 @@ docker compose exec app bash
 docker compose exec app python manage.py shell
 ```
 
-### Frontend Development
-
+### 12.3 Frontend Development
 ```bash
 # Dev server
 cd ~/simplex-smp-monitor/frontend
@@ -1026,12 +1043,14 @@ npm run dev
 # Build for production
 npm run build
 
+# Check TypeScript errors
+npx tsc --noEmit
+
 # Test specific page
 # http://localhost:5173/tor-networks/{network-id}/analytics
 ```
 
-### Clean Up Commands
-
+### 12.4 Clean Up Commands
 ```bash
 # Remove all SimpleX containers
 docker ps -a | grep simplex | awk '{print $1}' | xargs -r docker rm -f
@@ -1046,6 +1065,25 @@ docker network prune -f
 docker compose down -v
 ```
 
+### 12.5 Common Git Commands
+```bash
+# Feature commit
+git commit -m "feat(analytics): add ForensicsOverviewPage with timing charts"
+
+# Fix commit
+git commit -m "fix(circuits): resolve TypeScript errors in CircuitsListPage"
+
+# Docs commit
+git commit -m "docs: update CHUTNEX_ANALYTICS.md with new pages"
+
+# Style commit
+git commit -m "style(components): apply Neon Blue theme to all cards"
+```
+
 ---
 
-*Last updated: 14.01.2026*
+*Document Version: 1.1*  
+*Last Updated: January 15, 2026*  
+*Author: cannatoshi*
+
+**🔬 SimpleX SMP Monitor - Developer Documentation**
