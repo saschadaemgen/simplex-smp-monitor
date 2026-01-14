@@ -12,11 +12,12 @@
 3. [Network Configuration](#3-network-configuration)
 4. [WebSocket Communication](#4-websocket-communication)
 5. [ChutneX Private Tor Network](#5-chutnex-private-tor-network)
-6. [Environment Detection](#6-environment-detection)
-7. [Known Issues & Solutions](#7-known-issues--solutions)
-8. [Verification Tests](#8-verification-tests)
-9. [Implementation Changelog](#9-implementation-changelog)
-10. [Docker Manager Module](#10-docker-manager-module)
+6. [ChutneX Analytics Frontend](#6-chutnex-analytics-frontend)
+7. [Environment Detection](#7-environment-detection)
+8. [Known Issues & Solutions](#8-known-issues--solutions)
+9. [Verification Tests](#9-verification-tests)
+10. [Implementation Changelog](#10-implementation-changelog)
+11. [Docker Manager Module](#11-docker-manager-module)
 
 ---
 
@@ -51,6 +52,15 @@ docker/images/
 └── simplex-ntf/          # Notification Server
     ├── Dockerfile
     └── entrypoint.sh
+```
+
+### Documentation Structure (Updated 2026-01-14)
+
+```
+docs/
+├── CHUTNEX.md              # ChutneX Technical Documentation
+├── CHUTNEX_ANALYTICS.md    # Analytics Frontend Development Guide (NEW)
+└── DEVNOTES.md             # This file - Developer Notes
 ```
 
 ### Why This Structure?
@@ -270,7 +280,192 @@ if hosting_mode == 'chutnex' and server.chutnex_network:
 
 ---
 
-## 6. Environment Detection
+## 6. ChutneX Analytics Frontend
+
+> **⚠️ NEW SECTION (2026-01-14)**
+> **Detaillierte Dokumentation:** siehe `docs/CHUTNEX_ANALYTICS.md`
+
+### 6.1 Übersicht
+
+ChutneX Analytics ist die Forensik- und Analyse-Suite für private Tor-Netzwerke mit:
+- **120 Features** in 12 Kategorien
+- React + TypeScript + Recharts
+- i18n Support (DE/EN)
+- Neon Blue Design (#88CED0)
+
+### 6.2 Entwicklungsstrategie
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                 ENTWICKLUNGSPHASEN                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  PHASE 1: Frontend First (AKTUELL)                              │
+│  ├── UI-Komponenten mit Mock/Demo-Daten                         │
+│  ├── Alle Seiten layouten und stylen                            │
+│  ├── i18n für alle Texte                                        │
+│  └── Navigation und Routing                                     │
+│                                                                 │
+│  PHASE 2: Backend Integration                                   │
+│  ├── API-Endpoints für echte Daten                              │
+│  ├── stem (Tor Control Port) Integration                        │
+│  ├── Datenbank-Modelle für Forensik                             │
+│  └── WebSocket für Live-Updates                                 │
+│                                                                 │
+│  PHASE 3: Zusatzsoftware                                        │
+│  ├── tcpdump/tshark für Packet Capture                          │
+│  ├── Zeek für Protocol Analysis                                 │
+│  ├── Suricata für IDS/Alerts                                    │
+│  └── Neo4j für Graph-Datenbank                                  │
+│                                                                 │
+│  PHASE 4: Enterprise Features                                   │
+│  ├── ML-basierte Anomalie-Erkennung                             │
+│  ├── Automatisierte Reports                                     │
+│  ├── Prometheus/Grafana Integration                             │
+│  └── Multi-Network Vergleiche                                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 6.3 Aktuelle Seiten (Stand: 2026-01-14)
+
+| Seite | Route | Daten | Status |
+|-------|-------|-------|--------|
+| AnalyticsDashboard | `/tor-networks/:id/analytics` | Echt | ✅ LIVE |
+| NodeGridPage | `/tor-networks/:id/analytics/nodes` | Echt | ✅ ALPHA |
+| NodeBandwidthPage | `/tor-networks/:id/analytics/nodes/bandwidth` | Echt | ✅ ALPHA |
+| CircuitsListPage | `/tor-networks/:id/analytics/circuits` | Echt | ✅ ALPHA |
+| CircuitDetailPage | `/tor-networks/:id/analytics/circuits/card` | Echt | ✅ ALPHA |
+| CircuitPathPage | `/tor-networks/:id/analytics/circuits/path` | Echt | ✅ ALPHA |
+| CircuitStatsPage | `/tor-networks/:id/analytics/circuits/stats` | Echt | ✅ ALPHA |
+| CircuitFiltersPage | `/tor-networks/:id/analytics/circuits/filters` | Echt | ✅ ALPHA |
+| CircuitEventsPage | `/tor-networks/:id/analytics/circuits/events` | Echt | ✅ ALPHA |
+| TrafficOverviewPage | `/tor-networks/:id/analytics/traffic` | Echt | ✅ ALPHA |
+| BandwidthChartPage | `/tor-networks/:id/analytics/traffic/bandwidth` | Echt | ✅ ALPHA |
+| ForensicsOverviewPage | `/tor-networks/:id/analytics/forensics` | **MOCK** | ✅ ALPHA |
+
+### 6.4 Mock vs Echte Daten
+
+**⚠️ WICHTIG für Entwickler:**
+
+```typescript
+// ECHTE DATEN (von API):
+- nodes.stats[]
+- circuits.circuits[]
+- bandwidth.total_bytes_read/written
+- bandwidth.by_node_type
+
+// MOCK DATEN (Math.random()):
+// In ForensicsOverviewPage.tsx:
+entryLatency: Math.random() * 50 + 10,
+exitLatency: Math.random() * 80 + 20,
+anomalyScore: Math.random() * 100,
+timingAnomalies: Math.floor(Math.random() * 5),
+patternMatches: Math.floor(Math.random() * 12),
+suspiciousFlows: Math.floor(Math.random() * 3),
+
+// Hardcoded Demo-Daten:
+- Investigation Queue Items (INV-001, INV-002, etc.)
+- Security Radar Scores
+- Threat Level Indicators
+- Scatter Plot für Korrelation
+```
+
+**Grund:** Backend-Endpoints für Forensik noch nicht implementiert. 
+Siehe Phase 2 in `CHUTNEX_ANALYTICS.md`.
+
+### 6.5 Was mit stem (jetzt schon) möglich ist
+
+```python
+# Bereits installiert: stem (Python Tor Controller)
+from stem.control import Controller, EventType
+
+# Diese Events können wir live abfangen:
+controller.add_event_listener(callback, EventType.CIRC)      # Circuit Events
+controller.add_event_listener(callback, EventType.STREAM)    # Stream Events  
+controller.add_event_listener(callback, EventType.BW)        # Bandwidth
+controller.add_event_listener(callback, EventType.CELL_STATS) # Cell Stats
+```
+
+**Damit können wir bauen (ohne Zusatzsoftware):**
+
+| Feature | Machbar? | Wie? |
+|---------|----------|------|
+| Timing Correlation | ✅ JA | Circuit create/close Timestamps vergleichen |
+| Circuit Event Log | ✅ JA | Alle CIRC Events speichern |
+| Basic Anomaly Detection | ✅ JA | Statistische Analyse (stddev, outliers) |
+| Path Analysis | ✅ JA | Welche Nodes werden wie oft genutzt |
+| Bandwidth per Circuit | ✅ JA | STREAM Events tracken |
+
+### 6.6 Zusatzsoftware (Phase 3)
+
+| Tool | Verwendung | Priority | Installation |
+|------|------------|----------|--------------|
+| **tcpdump** | Raw Packet Capture | HIGH | `apt install tcpdump` |
+| **tshark** | Wireshark CLI | HIGH | `apt install tshark` |
+| **Zeek** | Protocol Analysis | MEDIUM | Siehe CHUTNEX_ANALYTICS.md |
+| **Suricata** | IDS/IPS Alerts | MEDIUM | `apt install suricata` |
+| **Neo4j** | Graph Database | LOW | Debian repo |
+
+### 6.7 Häufige Analytics-Probleme
+
+**Import-Duplikate in App.tsx:**
+```bash
+# Prüfen
+grep -n "ComponentName" frontend/src/App.tsx
+
+# Duplikat entfernen (N = Zeilennummer)
+sed -i 'Nd' frontend/src/App.tsx
+```
+
+**Route-Struktur kaputt:**
+```bash
+# Zeilen anzeigen
+sed -n '190,210p' frontend/src/App.tsx
+
+# Kaputte Zeile ersetzen
+sed -i '193c\<Route path="..." element={...} />' frontend/src/App.tsx
+```
+
+**Chart rendert nicht:**
+```tsx
+// FALSCH:
+<ResponsiveContainer><LineChart /></ResponsiveContainer>
+
+// RICHTIG:
+<div className="h-[300px]">
+  <ResponsiveContainer width="100%" height="100%">
+    <LineChart />
+  </ResponsiveContainer>
+</div>
+```
+
+### 6.8 Workflow für neue Seiten
+
+```bash
+# 1. Seite erstellen
+cat > frontend/src/pages/chutney/{category}/{Name}Page.tsx
+
+# 2. Übersetzungen (de.json + en.json)
+python3 << 'PYEOF'
+import json
+# ... add translations
+PYEOF
+
+# 3. Route in App.tsx
+sed -i '/const CircuitsListPage/a const NewPage = lazy(...);' App.tsx
+
+# 4. MegaMenu Badge (SOON → ALPHA)
+sed -i "s/badge: 'SOON', disabled: true/badge: 'ALPHA'/" ChutneXMegaMenu.tsx
+
+# 5. Dokumentation updaten!
+# docs/CHUTNEX_ANALYTICS.md - To-Do Liste
+# docs/DEVNOTES.md - Changelog
+```
+
+---
+
+## 7. Environment Detection
 
 ### Development vs Docker
 
@@ -295,7 +490,7 @@ else:
 
 ---
 
-## 7. Known Issues & Solutions
+## 8. Known Issues & Solutions
 
 ### Issue: App can't reach SimpleX clients
 
@@ -340,9 +535,40 @@ docker compose build app --no-cache
 docker compose up -d
 ```
 
+### Issue: App.tsx Import/Route Duplikate (Analytics)
+
+**Symptom:** Build-Fehler wegen doppelter Definitionen
+
+**Ursache:** `sed -i` Befehle haben mehrfach eingefügt
+
+**Lösung:**
+```bash
+# Duplikate finden
+grep -n "PageName" frontend/src/App.tsx
+
+# Duplikat-Zeile löschen (N = Zeilennummer)
+sed -i 'Nd' frontend/src/App.tsx
+```
+
+### Issue: Chart rendert nicht (Analytics)
+
+**Symptom:** ResponsiveContainer zeigt nichts
+
+**Ursache:** Parent hat keine feste Höhe
+
+**Lösung:**
+```tsx
+// Parent braucht feste Höhe!
+<div className="h-[300px]">
+  <ResponsiveContainer width="100%" height="100%">
+    <LineChart />
+  </ResponsiveContainer>
+</div>
+```
+
 ---
 
-## 8. Verification Tests
+## 9. Verification Tests
 
 ### ChutneX Isolation Test
 
@@ -428,9 +654,71 @@ docker exec simplex-monitor-redis redis-cli ping
 # Expected: PONG
 ```
 
+### Analytics Frontend Test
+
+```bash
+# Dev Server starten
+cd ~/simplex-smp-monitor/frontend
+npm run dev
+
+# Im Browser öffnen:
+# http://localhost:5173/tor-networks/{network-id}/analytics
+
+# Prüfen:
+# - MegaMenu öffnet sich
+# - Network Dropdown funktioniert
+# - Charts laden
+# - Sprachumschaltung DE/EN funktioniert
+```
+
 ---
 
-## 9. Implementation Changelog
+## 10. Implementation Changelog
+
+### 2026-01-14: ChutneX Analytics Forensics + Documentation
+
+**Neue Seiten:**
+- ForensicsOverviewPage mit Timing Charts, Radar, Scatter Plot
+- BandwidthChartPage mit 4 Chart-Typen und Brush-Zoom
+
+**Fixes:**
+- App.tsx Route-Duplikate entfernt
+- MegaMenu i18n komplett (DE/EN)
+
+**Dokumentation:**
+- `docs/CHUTNEX_ANALYTICS.md` erstellt (Frontend Development Guide)
+- `docs/DEVNOTES.md` erweitert mit Analytics-Sektion (Sektion 6)
+- `docs/CHUTNEX.md` aktualisiert
+
+**Bekannte Issues:**
+- ForensicsOverviewPage verwendet Mock-Daten (Math.random())
+- Backend-Endpoints für Forensik noch nicht implementiert
+
+### 2026-01-13: Traffic & Circuits Seiten
+
+**Neue Seiten:**
+- TrafficOverviewPage
+- CircuitsListPage, CircuitDetailPage
+- CircuitPathPage, CircuitStatsPage
+- CircuitFiltersPage, CircuitEventsPage
+
+**Features:**
+- i18n System mit react-i18next
+- Language Switcher in Header
+- Auto-Refresh für alle Seiten
+
+### 2026-01-12: ChutneX Analytics Initial
+
+**Neue Features:**
+- ChutneXMegaMenu mit 120 Features in 12 Kategorien
+- AnalyticsDashboard Hauptseite
+- NodeGridPage, NodeBandwidthPage
+- API Client (chutney_analytics.ts)
+
+**Architektur:**
+- Neon Blue Design System (#88CED0)
+- Recharts für Visualisierungen
+- React Router für Navigation
 
 ### 2026-01-12: WebSocket URL Environment Detection
 
@@ -486,7 +774,7 @@ docker exec simplex-monitor-redis redis-cli ping
 
 ---
 
-## 10. Docker Manager Module
+## 11. Docker Manager Module
 
 ### Architecture Overview
 
@@ -728,6 +1016,20 @@ docker compose exec app bash
 docker compose exec app python manage.py shell
 ```
 
+### Frontend Development
+
+```bash
+# Dev server
+cd ~/simplex-smp-monitor/frontend
+npm run dev
+
+# Build for production
+npm run build
+
+# Test specific page
+# http://localhost:5173/tor-networks/{network-id}/analytics
+```
+
 ### Clean Up Commands
 
 ```bash
@@ -746,4 +1048,4 @@ docker compose down -v
 
 ---
 
-*Last updated: 12.01.2026*
+*Last updated: 14.01.2026*

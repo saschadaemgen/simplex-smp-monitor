@@ -6,6 +6,10 @@
 
 This document provides comprehensive technical documentation of the ChutneX system architecture, implementation details, and integration points for advanced data analysis.
 
+> **Related Documentation:**
+> - `docs/CHUTNEX_ANALYTICS.md` - Analytics Frontend Development Guide (NEW)
+> - `docs/DEVNOTES.md` - Developer Notes
+
 ---
 
 ## Table of Contents
@@ -932,7 +936,24 @@ def analyze_circuits(node_ip: str, control_port: int = 9051):
 | **Consensus** | Vote timing, authority agreement | DA logs |
 | **Hidden Service** | Descriptor publication, intro points | stem HS events |
 
-### 8.4 Packet Capture Points
+### 8.4 What Can Be Built with Current Software
+
+> **See:** `docs/CHUTNEX_ANALYTICS.md` Section 6.5 for details
+
+**Using stem (already installed):**
+- Timing Correlation (Circuit Events)
+- Basic Anomaly Detection (statistical outliers)
+- Bandwidth Monitoring per Node/Circuit
+- Circuit Path Analysis
+- Node Usage Heatmaps
+
+**Needs Additional Software:**
+- Packet Capture (tcpdump/tshark)
+- Deep Protocol Analysis (Zeek)
+- IDS Alerts (Suricata)
+- Graph Database (Neo4j)
+
+### 8.5 Packet Capture Points
 
 ```bash
 # Capture all ChutneX traffic
@@ -946,9 +967,9 @@ docker exec chutnex-berlin8-exit1 \
     tcpdump -i eth0 -w /tmp/exit1-traffic.pcap
 ```
 
-### 8.5 Integration with Enterprise Stack (Roadmap Phase 10)
+### 8.6 Integration with Enterprise Stack (Roadmap Phase 10)
 
-#### 8.5.1 Zeek Protocol Analysis
+#### 8.6.1 Zeek Protocol Analysis
 
 ```zeek
 # zeek/scripts/chutnex-tor.zeek
@@ -984,7 +1005,7 @@ event tor_cell(c: connection, is_orig: bool, cell_type: count, payload: string)
 }
 ```
 
-#### 8.5.2 Neo4j Graph Schema
+#### 8.6.2 Neo4j Graph Schema
 
 ```cypher
 // Node types
@@ -1007,7 +1028,7 @@ WHERE hs.onion = 'tvbdfd6j...5qd.onion'
 RETURN c, circ, hs
 ```
 
-#### 8.5.3 Suricata IDS Rules
+#### 8.6.3 Suricata IDS Rules
 
 ```yaml
 # suricata/rules/chutnex.rules
@@ -1033,7 +1054,7 @@ alert tcp $CHUTNEX_NET any -> $CHUTNEX_DA_NET any (
 )
 ```
 
-### 8.6 Timing Correlation Analysis
+### 8.7 Timing Correlation Analysis
 
 ChutneX enables **world-first** timing correlation research on SimpleX:
 
@@ -1124,10 +1145,20 @@ def analyze_timing_correlation(sender_events: list, receiver_events: list,
 | `frontend/src/pages/ChutneXDetail.tsx` | Network detail view |
 | `frontend/src/pages/ServerForm.tsx` | Server creation with ChutneX |
 | `frontend/src/pages/ClientForm.tsx` | Client creation with modes |
+| `frontend/src/pages/chutney/` | All ChutneX Analytics pages |
+| `frontend/src/components/navigation/ChutneXMegaMenu.tsx` | 120-feature navigation |
 | `frontend/src/i18n/locales/de.json` | German translations |
 | `frontend/src/i18n/locales/en.json` | English translations |
 
-### 9.4 API Endpoints
+### 9.4 Documentation (Updated 2026-01-14)
+
+| File | Purpose |
+|------|---------|
+| `docs/CHUTNEX.md` | This file - Technical documentation |
+| `docs/CHUTNEX_ANALYTICS.md` | Analytics Frontend Development Guide |
+| `docs/DEVNOTES.md` | Developer Notes |
+
+### 9.5 API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -1137,6 +1168,7 @@ def analyze_timing_correlation(sender_events: list, receiver_events: list,
 | `/api/v1/chutney/networks/{slug}/stop/` | POST | Stop network |
 | `/api/v1/chutney/networks/{slug}/status/` | GET | Network status |
 | `/api/v1/chutney/networks/{slug}/logs/` | GET | Container logs |
+| `/api/v1/chutney/networks/{id}/analytics/` | GET | Analytics data |
 
 ---
 
@@ -1513,8 +1545,8 @@ curl -X POST http://localhost:8000/api/v1/chutney/networks/testnet/start/
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: January 12, 2026*  
-*Author: cannatoshi + Claude*
+*Document Version: 1.1*  
+*Last Updated: January 14, 2026*  
+*Author: cannatoshi*
 
 **🔬 ChutneX - Your Private Tor Network for SimpleX Forensics**
