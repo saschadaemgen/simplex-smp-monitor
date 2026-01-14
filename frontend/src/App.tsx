@@ -42,6 +42,7 @@ const NodePortsPage = lazy(() => import('./pages/chutney/nodes/NodePortsPage'));
 
 // --- Circuits Section (6) ---
 const CircuitsListPage = lazy(() => import('./pages/chutney/circuits/CircuitsListPage'));
+const TrafficOverviewPage = lazy(() => import('./pages/chutney/traffic/TrafficOverviewPage'));
 const CircuitDetailPage = lazy(() => import('./pages/chutney/circuits/CircuitDetailPage'));
 const CircuitPathPage = lazy(() => import('./pages/chutney/circuits/CircuitPathPage'));
 const CircuitStatsPage = lazy(() => import('./pages/chutney/circuits/CircuitStatsPage'));
@@ -49,7 +50,6 @@ const CircuitFiltersPage = lazy(() => import('./pages/chutney/circuits/CircuitFi
 const CircuitEventsPage = lazy(() => import('./pages/chutney/circuits/CircuitEventsPage'));
 
 // --- Traffic Section (6) ---
-const TrafficOverviewPage = lazy(() => import('./pages/chutney/traffic/TrafficOverviewPage'));
 const BandwidthChartPage = lazy(() => import('./pages/chutney/traffic/BandwidthChartPage'));
 const CapturesListPage = lazy(() => import('./pages/chutney/traffic/CapturesListPage'));
 const CaptureDetailPage = lazy(() => import('./pages/chutney/traffic/CaptureDetailPage'));
@@ -190,13 +190,8 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}><NodePortsPage /></Suspense>
           } />
           
-          {/* --- CIRCUITS SECTION (6) --- */}
-          <Route path="tor-networks/:id/analytics/circuits" element={
-            <Suspense fallback={<LoadingSpinner />}><CircuitsListPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/circuits/card" element={
-            <Suspense fallback={<LoadingSpinner />}><CircuitDetailPage /></Suspense>
-          } />
+          <Route path="tor-networks/:id/analytics/circuits" element={<Suspense fallback={<LoadingSpinner />}><CircuitsListPage /></Suspense>} />
+          <Route path="tor-networks/:id/analytics/circuits/card" element={<Suspense fallback={<LoadingSpinner />}><CircuitDetailPage /></Suspense>} />
           <Route path="tor-networks/:id/analytics/circuits/card/:circuitId" element={
             <Suspense fallback={<LoadingSpinner />}><CircuitDetailPage /></Suspense>
           } />
