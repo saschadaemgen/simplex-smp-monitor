@@ -1545,8 +1545,8 @@ curl -X POST http://localhost:8000/api/v1/chutney/networks/testnet/start/
 
 ---
 
-*Document Version: 1.1*  
-*Last Updated: January 14, 2026*  
+*Document Version: 1.2*  
+*Last Updated: January 15, 2026*  
 *Author: cannatoshi*
 
 **🔬 ChutneX - Your Private Tor Network for SimpleX Forensics**
