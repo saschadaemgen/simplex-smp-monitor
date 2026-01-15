@@ -30,7 +30,7 @@ export default function Layout() {
   // Neon Blue
   const neonBlue = '#88CED0';
 
-  // Footer Rotation alle 10 Sekunden
+  // Footer rotation every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setIsAnimating(true);
@@ -58,12 +58,12 @@ export default function Layout() {
     window.open('https://github.com/cannatoshi/simplex-smp-monitor', '_blank', 'noopener,noreferrer');
   };
 
-  // Top Navigation Items - ChutneX wird separat als MegaMenu gerendert
+  // Top Navigation Items - ChutneX is rendered separately as MegaMenu
   const navItems = [
     { to: '/dashboard', label: t('nav.dashboard') },
     { to: '/servers', label: t('nav.servers') },
     { to: '/clients', label: t('nav.clients') },
-    // ChutneX ist jetzt das MegaMenu - nicht mehr hier
+    // ChutneX is now the MegaMenu - no longer here
     { to: '/diagnostics', label: t('nav.diagnostics') },
     { to: '/traffic', label: t('nav.traffic') },
     { to: '/forensics', label: t('nav.forensics') },
@@ -152,7 +152,7 @@ export default function Layout() {
                         {active && item.label}
                       </span>
                       
-                      {/* Unterstrich-Effekt - NEON BLUE */}
+                      {/* Underline Effect - NEON BLUE */}
                       <div 
                         className={`absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-all duration-300 ${
                           active 
@@ -166,7 +166,7 @@ export default function Layout() {
                       />
                     </NavLink>
                     
-                    {/* Horizontaler Trennstrich */}
+                    {/* Horizontal Separator */}
                     <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
                   </div>
                 );
@@ -203,7 +203,7 @@ export default function Layout() {
                         {active && item.label}
                       </span>
                       
-                      {/* Unterstrich-Effekt - NEON BLUE */}
+                      {/* Underline Effect - NEON BLUE */}
                       <div 
                         className={`absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-all duration-300 ${
                           active 
@@ -217,7 +217,7 @@ export default function Layout() {
                       />
                     </NavLink>
                     
-                    {/* Horizontaler Trennstrich */}
+                    {/* Horizontal Separator */}
                     {!isLast && (
                       <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
                     )}
@@ -228,8 +228,8 @@ export default function Layout() {
           </div>
         </header>
 
-        {/* Main Content - Fixed height, scrollable */}
-        <main className="flex-1 p-6 overflow-auto min-h-0">
+        {/* Main Content - Edge-to-Edge, Full Width/Height, No Padding */}
+        <main className="flex-1 overflow-auto min-h-0">
           <Outlet />
         </main>
 
