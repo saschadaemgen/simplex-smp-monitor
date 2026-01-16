@@ -165,3 +165,14 @@
   background: rgba(136, 206, 208, 0.3);
   color: inherit;
 }
+/* Tab transition animation */
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    
+  }
+  to {
+    opacity: 1;
+    
+  }
+}
