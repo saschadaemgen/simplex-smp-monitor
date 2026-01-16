@@ -415,7 +415,7 @@ export interface ThreatIntel {
 // UI STATE TYPES
 // =============================================================================
 
-export type AnalyticsTab = 'overview' | 'nodes' | 'circuits' | 'traffic' | 'forensics' | 'topology' | 'integration';
+export type AnalyticsTab = 'overview' | 'nodes' | 'circuits' | 'traffic';
 
 export interface AnalyticsState {
   activeTab: AnalyticsTab;

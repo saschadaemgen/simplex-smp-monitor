@@ -1,7 +1,6 @@
 // Components
 export { default as NodeGrid } from './nodes/NodeGrid';
 export { default as NodeBandwidth } from './nodes/NodeBandwidth';
-export { default as CircuitsList } from './circuits/CircuitsList';
 export { default as CircuitPathViz } from './circuits/CircuitPathViz';
 export { default as CircuitStats } from './circuits/CircuitStats';
 export { default as ConsensusInfo } from './overview/ConsensusInfo';
