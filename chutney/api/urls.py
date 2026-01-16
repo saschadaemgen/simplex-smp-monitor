@@ -9,10 +9,13 @@ REST API Endpunkte:
 
 Analytics Endpunkte (NEU):
 - /api/v1/chutney/networks/{id}/analytics/
+- /api/v1/chutney/networks/{id}/analytics/overview/  <-- NEU für Frontend
 - /api/v1/chutney/networks/{id}/bandwidth/
 - /api/v1/chutney/networks/{id}/bandwidth/nodes/
 - /api/v1/chutney/networks/{id}/circuits/
 - /api/v1/chutney/networks/{id}/consensus/
+- /api/v1/chutney/networks/{id}/nodes/
+- /api/v1/chutney/networks/{id}/alerts/
 - /api/v1/chutney/nodes/{id}/stats/
 - /api/v1/chutney/nodes/{id}/live-bandwidth/
 - /api/v1/chutney/nodes/{id}/circuits/
@@ -34,6 +37,8 @@ from .analytics_views import (
     NetworkBandwidthNodesView,
     NetworkCircuitsView,
     NetworkConsensusView,
+    NetworkNodesView,
+    NetworkAlertsView,
     NodeStatsView,
     NodeBandwidthView,
     NodeCircuitsView,
@@ -59,6 +64,12 @@ urlpatterns = [
         NetworkAnalyticsView.as_view(),
         name='network-analytics'
     ),
+    # Frontend calls /analytics/overview/ - same view, different URL
+    path(
+        'networks/<uuid:pk>/analytics/overview/',
+        NetworkAnalyticsView.as_view(),
+        name='network-analytics-overview'
+    ),
     path(
         'networks/<uuid:pk>/bandwidth/',
         NetworkBandwidthView.as_view(),
@@ -78,6 +89,16 @@ urlpatterns = [
         'networks/<uuid:pk>/consensus/',
         NetworkConsensusView.as_view(),
         name='network-consensus'
+    ),
+    path(
+        'networks/<uuid:pk>/nodes/',
+        NetworkNodesView.as_view(),
+        name='network-nodes'
+    ),
+    path(
+        'networks/<uuid:pk>/alerts/',
+        NetworkAlertsView.as_view(),
+        name='network-alerts'
     ),
     
     # Node-level analytics
