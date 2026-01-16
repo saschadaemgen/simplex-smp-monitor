@@ -264,7 +264,7 @@ export default function TorNetworkDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col h-full items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: neonBlue }}></div>
       </div>
     );
@@ -272,8 +272,12 @@ export default function TorNetworkDetail() {
 
   if (error || !network) {
     return (
-      <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-400">
-        {error || t('chutney.networkNotFound', 'Network not found')}
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-auto min-h-0 px-6 py-4">
+          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-400">
+            {error || t('chutney.networkNotFound', 'Network not found')}
+          </div>
+        </div>
       </div>
     );
   }
@@ -281,158 +285,169 @@ export default function TorNetworkDetail() {
   const status = network.status;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold text-white">{network.name}</h1>
-          <div className="flex items-center gap-2 mt-2">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-              network.is_running 
-                ? 'bg-green-900/30 text-green-400' 
-                : 'bg-slate-800 text-slate-400'
-            }`}>
-              {status.replace('_', ' ')}
-            </span>
-            <span className="text-slate-500 text-sm">{network.template} template</span>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800/50">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-white">{network.name}</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                network.is_running 
+                  ? 'bg-green-900/30 text-green-400' 
+                  : 'bg-slate-800 text-slate-400'
+              }`}>
+                {status.replace('_', ' ')}
+              </span>
+              <span className="text-slate-500 text-sm">{network.template} template</span>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Analytics Button - nur bei running */}
-          {status === 'running' && (
-            <Link
-              to={`/tor-networks/${network.id}/analytics`}
-              className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90"
-              style={{ backgroundColor: neonBlue, color: '#0f172a' }}
-            >
-              📊 {t('chutney.actions.analytics', 'Analytics')}
-            </Link>
-          )}
           
-          {status === 'not_created' && (
+          <div className="flex items-center gap-2">
+            {/* Analytics Button - nur bei running */}
+            {status === 'running' && (
+              <Link
+                to={`/tor-networks/${network.id}/analytics`}
+                className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90"
+                style={{ backgroundColor: neonBlue, color: '#0f172a' }}
+              >
+                📊 {t('chutney.actions.analytics', 'Analytics')}
+              </Link>
+            )}
+            
+            {status === 'not_created' && (
+              <button
+                onClick={() => handleNetworkAction('create')}
+                disabled={actionLoading}
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50"
+              >
+                🐳 {t('chutney.actions.createInfra', 'Create Infrastructure')}
+              </button>
+            )}
+            {(status === 'stopped' || status === 'created') && (
+              <button
+                onClick={() => handleNetworkAction('start')}
+                disabled={actionLoading}
+                className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium disabled:opacity-50"
+              >
+                ▶ {t('chutney.actions.start', 'Start Network')}
+              </button>
+            )}
+            {status === 'running' && (
+              <button
+                onClick={() => handleNetworkAction('stop')}
+                disabled={actionLoading}
+                className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium disabled:opacity-50"
+              >
+                ⏹ {t('chutney.actions.stop', 'Stop Network')}
+              </button>
+            )}
             <button
-              onClick={() => handleNetworkAction('create')}
+              onClick={() => handleNetworkAction('delete')}
               disabled={actionLoading}
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50"
             >
-              🐳 {t('chutney.actions.createInfra', 'Create Infrastructure')}
+              🗑 {t('chutney.actions.delete', 'Delete')}
             </button>
-          )}
-          {(status === 'stopped' || status === 'created') && (
-            <button
-              onClick={() => handleNetworkAction('start')}
-              disabled={actionLoading}
-              className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium disabled:opacity-50"
-            >
-              ▶ {t('chutney.actions.start', 'Start Network')}
-            </button>
-          )}
-          {status === 'running' && (
-            <button
-              onClick={() => handleNetworkAction('stop')}
-              disabled={actionLoading}
-              className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium disabled:opacity-50"
-            >
-              ⏹ {t('chutney.actions.stop', 'Stop Network')}
-            </button>
-          )}
-          <button
-            onClick={() => handleNetworkAction('delete')}
-            disabled={actionLoading}
-            className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50"
-          >
-            🗑 {t('chutney.actions.delete', 'Delete')}
-          </button>
+          </div>
         </div>
       </div>
 
-      <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">{t('chutney.networkOverview', 'Network Overview')}</h2>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-lg bg-slate-800">
-            <span className="text-slate-500 text-sm">{t('chutney.totalNodes', 'Total Nodes')}</span>
-            <p className="text-2xl font-bold text-white">{network.total_nodes}</p>
-          </div>
-          <div className="p-4 rounded-lg bg-slate-800">
-            <span className="text-slate-500 text-sm">{t('chutney.running', 'Running')}</span>
-            <p className="text-2xl font-bold" style={{ color: neonBlue }}>
-              {liveStatus?.running_nodes || network.running_nodes_count}
-            </p>
-          </div>
-          <div className="p-4 rounded-lg bg-slate-800">
-            <span className="text-slate-500 text-sm">{t('chutney.consensus', 'Consensus')}</span>
-            <p className={`text-2xl font-bold ${network.consensus_valid ? 'text-green-400' : 'text-slate-500'}`}>
-              {network.consensus_valid ? '✓ Valid' : '—'}
-            </p>
-          </div>
-          <div className="p-4 rounded-lg bg-slate-800">
-            <span className="text-slate-500 text-sm">{t('chutney.capture', 'Capture')}</span>
-            <p className={`text-2xl font-bold ${network.capture_enabled ? 'text-red-400' : 'text-slate-500'}`}>
-              {network.capture_enabled ? '📹 On' : 'Off'}
-            </p>
-          </div>
-        </div>
-        
-        {status === 'bootstrapping' && (
-          <div className="mt-4">
-            <div className="flex justify-between text-sm text-slate-400 mb-1">
-              <span>{t('chutney.bootstrapProgress', 'Bootstrap Progress')}</span>
-              <span>{liveStatus?.network.bootstrap_progress || network.bootstrap_progress}%</span>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-3">
-              <div 
-                className="h-3 rounded-full transition-all duration-500"
-                style={{ 
-                  width: `${liveStatus?.network.bootstrap_progress || network.bootstrap_progress}%`,
-                  backgroundColor: neonBlue 
-                }}
-              ></div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {(Object.entries(nodesByType) as [NodeType, TorNode[]][])
-        .filter(([, nodes]) => nodes.length > 0)
-        .map(([type, nodes]) => {
-          const typeInfo = nodeTypeConfig[type];
-          return (
-            <div key={type} className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <span>{typeInfo.icon}</span>
-                <span>{typeInfo.label}s</span>
-                <span className="text-slate-500 text-sm font-normal">({nodes.length})</span>
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {nodes.map((node: TorNode) => (
-                  <NodeCard
-                    key={node.id}
-                    node={node}
-                    onAction={(action) => handleNodeAction(node.id, action)}
-                    actionLoading={nodeActionLoading === node.id}
-                  />
-                ))}
+      {/* Content */}
+      <div className="flex-1 overflow-auto min-h-0 px-6 py-4">
+        <div className="space-y-6">
+          {/* Network Overview */}
+          <div className="bg-slate-900/50 rounded-xl border border-slate-800/50 p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">{t('chutney.networkOverview', 'Network Overview')}</h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-lg bg-slate-800">
+                <span className="text-slate-500 text-sm">{t('chutney.totalNodes', 'Total Nodes')}</span>
+                <p className="text-2xl font-bold text-white">{network.total_nodes}</p>
+              </div>
+              <div className="p-4 rounded-lg bg-slate-800">
+                <span className="text-slate-500 text-sm">{t('chutney.running', 'Running')}</span>
+                <p className="text-2xl font-bold" style={{ color: neonBlue }}>
+                  {liveStatus?.running_nodes || network.running_nodes_count}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-slate-800">
+                <span className="text-slate-500 text-sm">{t('chutney.consensus', 'Consensus')}</span>
+                <p className={`text-2xl font-bold ${network.consensus_valid ? 'text-green-400' : 'text-slate-500'}`}>
+                  {network.consensus_valid ? '✓ Valid' : '—'}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-slate-800">
+                <span className="text-slate-500 text-sm">{t('chutney.capture', 'Capture')}</span>
+                <p className={`text-2xl font-bold ${network.capture_enabled ? 'text-red-400' : 'text-slate-500'}`}>
+                  {network.capture_enabled ? '📹 On' : 'Off'}
+                </p>
               </div>
             </div>
-          );
-        })}
+            
+            {status === 'bootstrapping' && (
+              <div className="mt-4">
+                <div className="flex justify-between text-sm text-slate-400 mb-1">
+                  <span>{t('chutney.bootstrapProgress', 'Bootstrap Progress')}</span>
+                  <span>{liveStatus?.network.bootstrap_progress || network.bootstrap_progress}%</span>
+                </div>
+                <div className="w-full bg-slate-800 rounded-full h-3">
+                  <div 
+                    className="h-3 rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${liveStatus?.network.bootstrap_progress || network.bootstrap_progress}%`,
+                      backgroundColor: neonBlue 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            )}
+          </div>
 
-      <div className="flex space-x-3">
-        <Link 
-          to="/tor-networks" 
-          className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium"
-        >
-          ← {t('common.back', 'Back to Networks')}
-        </Link>
-        <Link 
-          to={`/tor-networks/${network.id}/edit`} 
-          className="px-4 py-2 rounded-lg font-medium"
-          style={{ backgroundColor: neonBlue, color: '#0f172a' }}
-        >
-          {t('common.edit', 'Edit Network')}
-        </Link>
+          {/* Node Groups */}
+          {(Object.entries(nodesByType) as [NodeType, TorNode[]][])
+            .filter(([, nodes]) => nodes.length > 0)
+            .map(([type, nodes]) => {
+              const typeInfo = nodeTypeConfig[type];
+              return (
+                <div key={type} className="bg-slate-900/50 rounded-xl border border-slate-800/50 p-6">
+                  <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <span>{typeInfo.icon}</span>
+                    <span>{typeInfo.label}s</span>
+                    <span className="text-slate-500 text-sm font-normal">({nodes.length})</span>
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {nodes.map((node: TorNode) => (
+                      <NodeCard
+                        key={node.id}
+                        node={node}
+                        onAction={(action) => handleNodeAction(node.id, action)}
+                        actionLoading={nodeActionLoading === node.id}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+          {/* Footer Actions */}
+          <div className="flex space-x-3">
+            <Link 
+              to="/tor-networks" 
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              ← {t('common.back', 'Back to Networks')}
+            </Link>
+            <Link 
+              to={`/tor-networks/${network.id}/edit`} 
+              className="px-4 py-2 rounded-lg font-medium transition-colors hover:opacity-90"
+              style={{ backgroundColor: neonBlue, color: '#0f172a' }}
+            >
+              {t('common.edit', 'Edit Network')}
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
