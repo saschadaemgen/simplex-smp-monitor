@@ -1,24 +1,9 @@
 """
-Chutney API URL Configuration
+Chutney API URL Configuration (EXTENDED)
+=========================================
+Copyright (c) 2026 cannatoshi
 
-REST API Endpunkte:
-- /api/v1/chutney/networks/
-- /api/v1/chutney/nodes/
-- /api/v1/chutney/captures/
-- /api/v1/chutney/events/
-
-Analytics Endpunkte (NEU):
-- /api/v1/chutney/networks/{id}/analytics/
-- /api/v1/chutney/networks/{id}/analytics/overview/  <-- NEU für Frontend
-- /api/v1/chutney/networks/{id}/bandwidth/
-- /api/v1/chutney/networks/{id}/bandwidth/nodes/
-- /api/v1/chutney/networks/{id}/circuits/
-- /api/v1/chutney/networks/{id}/consensus/
-- /api/v1/chutney/networks/{id}/nodes/
-- /api/v1/chutney/networks/{id}/alerts/
-- /api/v1/chutney/nodes/{id}/stats/
-- /api/v1/chutney/nodes/{id}/live-bandwidth/
-- /api/v1/chutney/nodes/{id}/circuits/
+Complete REST API endpoints with ALL model fields exposed.
 """
 
 from django.urls import path, include
@@ -38,6 +23,7 @@ from .analytics_views import (
     NetworkCircuitsView,
     NetworkConsensusView,
     NetworkNodesView,
+    NetworkCapturesView,
     NetworkAlertsView,
     NodeStatsView,
     NodeBandwidthView,
@@ -58,18 +44,20 @@ urlpatterns = [
     # Analytics URLs (Live Data via Tor Control Port)
     # ==========================================================================
     
-    # Network-level analytics
+    # Network-level analytics (ALL fields)
     path(
         'networks/<uuid:pk>/analytics/',
         NetworkAnalyticsView.as_view(),
         name='network-analytics'
     ),
-    # Frontend calls /analytics/overview/ - same view, different URL
+    # Alias for frontend compatibility
     path(
         'networks/<uuid:pk>/analytics/overview/',
         NetworkAnalyticsView.as_view(),
         name='network-analytics-overview'
     ),
+    
+    # Bandwidth
     path(
         'networks/<uuid:pk>/bandwidth/',
         NetworkBandwidthView.as_view(),
@@ -80,28 +68,45 @@ urlpatterns = [
         NetworkBandwidthNodesView.as_view(),
         name='network-bandwidth-nodes'
     ),
+    
+    # Circuits
     path(
         'networks/<uuid:pk>/circuits/',
         NetworkCircuitsView.as_view(),
         name='network-circuits'
     ),
+    
+    # Consensus
     path(
         'networks/<uuid:pk>/consensus/',
         NetworkConsensusView.as_view(),
         name='network-consensus'
     ),
+    
+    # Nodes (ALL fields)
     path(
         'networks/<uuid:pk>/nodes/',
         NetworkNodesView.as_view(),
         name='network-nodes'
     ),
+    
+    # Traffic Captures (NEW - ALL TrafficCapture fields)
+    path(
+        'networks/<uuid:pk>/captures/',
+        NetworkCapturesView.as_view(),
+        name='network-captures'
+    ),
+    
+    # Alerts
     path(
         'networks/<uuid:pk>/alerts/',
         NetworkAlertsView.as_view(),
         name='network-alerts'
     ),
     
+    # ==========================================================================
     # Node-level analytics
+    # ==========================================================================
     path(
         'nodes/<uuid:pk>/stats/',
         NodeStatsView.as_view(),
