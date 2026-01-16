@@ -4,7 +4,7 @@
  * Copyright (c) 2026 cannatoshi
  * 
  * Main page component that orchestrates all 8 analytics tabs
- * with real-time WebSocket updates and state management.
+ * with real-time WebSocket updates and REST API fallback.
  * 
  * Path: frontend/src/pages/chutney/analytics/AnalyticsDashboardPage.tsx
  */
@@ -14,13 +14,12 @@ import {
   ArrowLeft,
   RefreshCw,
   Settings,
-  Download,
   Maximize2,
   Minimize2,
 } from 'lucide-react';
 
 // Hooks
-import { useTorEvents, useAnalytics, formatBytes } from '../../../hooks/useTorWebSocket';
+import { useTorEvents, useAnalytics, type BandwidthData, type CircuitData, type TorEvent } from '../../../hooks/useTorWebSocket';
 
 // Components
 import { AnalyticsTabs, type AnalyticsTab } from '../../../components/chutneX/analytics/AnalyticsTabs';
@@ -47,9 +46,20 @@ interface NetworkData {
   consensus_valid: boolean;
   total_nodes: number;
   nodes_running: number;
+  nodes_by_type: Record<string, number>;
   total_circuits: number;
+  active_circuits: number;
   bytes_read: number;
   bytes_written: number;
+}
+
+interface ApiCircuit {
+  id: string;
+  status: string;
+  purpose: string;
+  path: string[];
+  source_node: string;
+  source_node_id: string;
 }
 
 // =============================================================================
@@ -66,9 +76,12 @@ export const AnalyticsDashboardPage: React.FC = () => {
     (searchParams.get('tab') as AnalyticsTab) || 'overview'
   );
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [networkData, setNetworkData] = useState<NetworkData | null>(null);
   const [nodes, setNodes] = useState<TorNodeData[]>([]);
+  const [apiCircuits, setApiCircuits] = useState<ApiCircuit[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [consensusData, setConsensusData] = useState<any>(null);
   const [bandwidthHistory, setBandwidthHistory] = useState<Array<{
     time: string;
     read: number;
@@ -80,9 +93,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
   const {
     state: eventState,
     events,
-    circuits,
-    bandwidth,
-    subscribe,
+    circuits: wsCircuits,
+    bandwidth: wsBandwidth,
     requestSnapshot,
   } = useTorEvents(networkId || '', {
     autoConnect: !!networkId,
@@ -92,7 +104,6 @@ export const AnalyticsDashboardPage: React.FC = () => {
   
   const {
     state: analyticsState,
-    stats,
     refresh: refreshAnalytics,
   } = useAnalytics(networkId || '', {
     autoConnect: !!networkId,
@@ -101,6 +112,45 @@ export const AnalyticsDashboardPage: React.FC = () => {
   
   // Combined connection state
   const isLive = eventState.isConnected || analyticsState.isConnected;
+  
+  // Build bandwidth map from nodes (REST API data)
+  const bandwidth = useMemo(() => {
+    const map = new Map<string, BandwidthData>();
+    nodes.forEach(node => {
+      map.set(node.id, {
+        node_id: node.id,
+        node_name: node.name,
+        bytes_read: node.bytes_read || 0,
+        bytes_written: node.bytes_written || 0,
+        avg_bytes_read: 0,
+        avg_bytes_written: 0,
+        sample_count: 1,
+        interval_seconds: 1,
+      });
+    });
+    // Merge with WebSocket data if available
+    wsBandwidth.forEach((bw, key) => {
+      map.set(key, bw);
+    });
+    return map;
+  }, [nodes, wsBandwidth]);
+  
+  // Convert API circuits to CircuitData format
+  const circuits: CircuitData[] = useMemo(() => {
+    // Use WebSocket circuits if available, otherwise API circuits
+    if (wsCircuits.length > 0) return wsCircuits;
+    
+    return apiCircuits.map(c => ({
+      circuit_id: c.id,
+      status: c.status,
+      path: c.path.map(fp => ({ fingerprint: fp, nickname: fp.substring(0, 8) })),
+      path_length: c.path.length,
+      purpose: c.purpose,
+      build_flags: [],
+      reason: null,
+      source_node: c.source_node,
+    }));
+  }, [apiCircuits, wsCircuits]);
   
   // ==========================================================================
   // EFFECTS
@@ -120,13 +170,15 @@ export const AnalyticsDashboardPage: React.FC = () => {
     setSearchParams({ tab });
   }, [setSearchParams]);
   
-  // Fetch initial network data
+  // Fetch initial network data (analytics overview)
   useEffect(() => {
     if (!networkId) return;
     
     const fetchNetworkData = async () => {
+      setIsLoading(true);
       try {
-        const response = await fetch(`/api/chutney/networks/${networkId}/analytics/overview/`);
+        // CORRECT URL: /api/chutney/networks/{id}/analytics/
+        const response = await fetch(`/api/chutney/networks/${networkId}/analytics/`);
         if (response.ok) {
           const data = await response.json();
           setNetworkData({
@@ -137,29 +189,56 @@ export const AnalyticsDashboardPage: React.FC = () => {
             consensus_valid: data.network.consensus_valid,
             total_nodes: data.nodes.total,
             nodes_running: data.nodes.running,
-            total_circuits: data.activity?.circuits_last_hour || 0,
+            nodes_by_type: data.nodes.by_type || {},
+            total_circuits: data.circuits.total,
+            active_circuits: data.circuits.active,
             bytes_read: data.traffic.bytes_read,
             bytes_written: data.traffic.bytes_written,
           });
         }
       } catch (error) {
         console.error('Failed to fetch network data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
     fetchNetworkData();
+    // Refresh every 5 seconds
+    const interval = setInterval(fetchNetworkData, 5000);
+    return () => clearInterval(interval);
   }, [networkId]);
   
-  // Fetch nodes for Nodes tab
+  // Fetch nodes
   useEffect(() => {
-    if (!networkId || activeTab !== 'nodes') return;
+    if (!networkId) return;
     
     const fetchNodes = async () => {
       try {
-        const response = await fetch(`/api/chutney/networks/${networkId}/analytics/nodes/`);
+        // CORRECT URL: /api/chutney/networks/{id}/nodes/
+        const response = await fetch(`/api/chutney/networks/${networkId}/nodes/`);
         if (response.ok) {
           const data = await response.json();
-          setNodes(data.nodes);
+          setNodes(data.nodes.map((n: any) => ({
+            id: n.id,
+            name: n.name,
+            node_type: n.node_type,
+            status: n.status,
+            control_port: n.control_port,
+            or_port: n.or_port,
+            dir_port: n.dir_port,
+            socks_port: n.socks_port,
+            fingerprint: n.fingerprint,
+            nickname: n.name,
+            v3_identity: null,
+            address: `127.0.0.1:${n.control_port}`,
+            flags: n.flags || [],
+            bytes_read: n.bytes_read || 0,
+            bytes_written: n.bytes_written || 0,
+            circuit_count: n.circuit_count || 0,
+            bootstrap_progress: n.bootstrap_progress || 0,
+            version: n.version,
+          })));
         }
       } catch (error) {
         console.error('Failed to fetch nodes:', error);
@@ -167,23 +246,68 @@ export const AnalyticsDashboardPage: React.FC = () => {
     };
     
     fetchNodes();
-  }, [networkId, activeTab]);
+    const interval = setInterval(fetchNodes, 5000);
+    return () => clearInterval(interval);
+  }, [networkId]);
   
-  // Fetch alerts for Alerts tab
+  // Fetch circuits
   useEffect(() => {
-    if (!networkId || activeTab !== 'alerts') return;
+    if (!networkId) return;
+    
+    const fetchCircuits = async () => {
+      try {
+        // CORRECT URL: /api/chutney/networks/{id}/circuits/
+        const response = await fetch(`/api/chutney/networks/${networkId}/circuits/`);
+        if (response.ok) {
+          const data = await response.json();
+          setApiCircuits(data.circuits || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch circuits:', error);
+      }
+    };
+    
+    fetchCircuits();
+    const interval = setInterval(fetchCircuits, 5000);
+    return () => clearInterval(interval);
+  }, [networkId]);
+  
+  // Fetch consensus
+  useEffect(() => {
+    if (!networkId) return;
+    
+    const fetchConsensus = async () => {
+      try {
+        // CORRECT URL: /api/chutney/networks/{id}/consensus/
+        const response = await fetch(`/api/chutney/networks/${networkId}/consensus/`);
+        if (response.ok) {
+          const data = await response.json();
+          setConsensusData(data.consensus);
+        }
+      } catch (error) {
+        console.error('Failed to fetch consensus:', error);
+      }
+    };
+    
+    fetchConsensus();
+  }, [networkId]);
+  
+  // Fetch alerts
+  useEffect(() => {
+    if (!networkId) return;
     
     const fetchAlerts = async () => {
       try {
-        const response = await fetch(`/api/chutney/networks/${networkId}/analytics/alerts/`);
+        // CORRECT URL: /api/chutney/networks/{id}/alerts/
+        const response = await fetch(`/api/chutney/networks/${networkId}/alerts/`);
         if (response.ok) {
           const data = await response.json();
-          setAlerts(data.alerts.map((a: any, i: number) => ({
+          setAlerts((data.alerts || []).map((a: any, i: number) => ({
             id: a.id || `alert-${i}`,
-            severity: a.severity || 'info',
-            type: a.alert_type || 'Unknown',
+            severity: a.level === 'critical' ? 'critical' : a.level === 'error' ? 'critical' : a.level === 'warning' ? 'warning' : 'info',
+            type: a.type || 'Unknown',
             message: a.message || '',
-            timestamp: a.time || new Date().toISOString(),
+            timestamp: a.timestamp || new Date().toISOString(),
             node_id: a.node_id,
             node_name: a.node_name,
             acknowledged: false,
@@ -196,33 +320,26 @@ export const AnalyticsDashboardPage: React.FC = () => {
     };
     
     fetchAlerts();
-  }, [networkId, activeTab]);
+    const interval = setInterval(fetchAlerts, 10000);
+    return () => clearInterval(interval);
+  }, [networkId]);
   
-  // Update bandwidth history from WebSocket events
+  // Update bandwidth history
   useEffect(() => {
-    if (bandwidth.size === 0) return;
-    
-    // Aggregate all node bandwidth
-    let totalRead = 0;
-    let totalWritten = 0;
-    bandwidth.forEach(bw => {
-      totalRead += bw.bytes_read;
-      totalWritten += bw.bytes_written;
-    });
+    if (!networkData) return;
     
     const newSample = {
-      time: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-      read: totalRead,
-      write: totalWritten,
-      total: totalRead + totalWritten,
+      time: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      read: networkData.bytes_read,
+      write: networkData.bytes_written,
+      total: networkData.bytes_read + networkData.bytes_written,
     };
     
     setBandwidthHistory(prev => {
       const updated = [...prev, newSample];
-      // Keep last 60 samples (5 minutes at 5s intervals)
-      return updated.slice(-60);
+      return updated.slice(-60); // Keep last 60 samples
     });
-  }, [bandwidth]);
+  }, [networkData?.bytes_read, networkData?.bytes_written]);
   
   // ==========================================================================
   // HANDLERS
@@ -237,17 +354,14 @@ export const AnalyticsDashboardPage: React.FC = () => {
     setAlerts(prev => prev.map(a => 
       a.id === alertId ? { ...a, acknowledged: true } : a
     ));
-    // TODO: Send to backend
   }, []);
   
   const handleDismissAlert = useCallback((alertId: string) => {
     setAlerts(prev => prev.filter(a => a.id !== alertId));
-    // TODO: Send to backend
   }, []);
   
   const handleDismissAllAlerts = useCallback(() => {
     setAlerts([]);
-    // TODO: Send to backend
   }, []);
   
   const toggleFullscreen = useCallback(() => {
@@ -272,6 +386,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
     criticalAlerts: alerts.filter(a => a.severity === 'critical' && !a.acknowledged).length,
   }), [nodes, circuits, alerts]);
   
+  // Bandwidth by node type for TrafficTab
   const nodesByType = useMemo(() => {
     const byType: Record<string, { bytes_read: number; bytes_written: number }> = {};
     nodes.forEach(node => {
@@ -284,7 +399,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
     return byType;
   }, [nodes]);
   
-  // Filter events by category for tabs
+  // Circuit events for CircuitsTab
   const circuitEvents = useMemo(() => 
     events.filter(e => e.category === 'circuit'),
     [events]
@@ -316,7 +431,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
           
           <div>
             <h1 className="text-lg font-semibold text-white">
-              {networkData?.name || 'ChutneX Analytics'}
+              {networkData?.name || 'Loading...'}
             </h1>
             <p className="text-xs text-gray-400">
               Real-time Tor Network Monitoring
@@ -376,24 +491,22 @@ export const AnalyticsDashboardPage: React.FC = () => {
       
       {/* Tab Content */}
       <main className="flex-1 overflow-hidden">
-        {activeTab === 'overview' && (
+        {activeTab === 'overview' && networkData && (
           <OverviewTab
             networkId={networkId}
-            networkName={networkData?.name || ''}
-            networkStatus={networkData?.status || 'unknown'}
+            networkName={networkData.name}
+            networkStatus={networkData.status}
             isLive={isLive}
-            totalNodes={networkData?.total_nodes || 0}
-            runningNodes={networkData?.nodes_running || 0}
-            nodesByType={Object.fromEntries(
-              Object.entries(nodesByType).map(([k, v]) => [k, v.bytes_read + v.bytes_written])
-            ) as Record<string, number>}
-            totalCircuits={networkData?.total_circuits || 0}
-            activeCircuits={circuits.length}
+            totalNodes={networkData.total_nodes}
+            runningNodes={networkData.nodes_running}
+            nodesByType={networkData.nodes_by_type}
+            totalCircuits={networkData.total_circuits}
+            activeCircuits={networkData.active_circuits}
             bandwidth={bandwidth}
             bandwidthHistory={bandwidthHistory}
             recentEvents={events.slice(0, 20)}
-            consensusValid={networkData?.consensus_valid || false}
-            bootstrapProgress={networkData?.bootstrap_progress || 0}
+            consensusValid={networkData.consensus_valid}
+            bootstrapProgress={networkData.bootstrap_progress}
           />
         )}
         
@@ -422,11 +535,11 @@ export const AnalyticsDashboardPage: React.FC = () => {
           />
         )}
         
-        {activeTab === 'consensus' && networkData && (
+        {activeTab === 'consensus' && (
           <ConsensusTab
-            consensus={{
-              is_valid: networkData.consensus_valid,
-              relay_count: networkData.total_nodes,
+            consensus={consensusData || {
+              is_valid: networkData?.consensus_valid || false,
+              relay_count: networkData?.total_nodes || 0,
               authority_count: nodes.filter(n => n.node_type === 'da').length,
               required_authorities: Math.floor(nodes.filter(n => n.node_type === 'da').length / 2) + 1,
             }}
