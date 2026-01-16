@@ -17,12 +17,16 @@ import CacheForensics from './pages/CacheForensics';
 import TorNetworks from './pages/TorNetworks';
 import TorNetworkDetail from './pages/TorNetworkDetail';
 import TorNetworkForm from './pages/TorNetworkForm';
-import ChutneXAnalytics from './pages/ChutneXAnalytics';
 import { VideoWidgetProvider } from './contexts/VideoWidgetContext';
 import Docker from './pages/Docker';
 
 // ============================================================================
-// LAZY LOADED CHUTNEX ANALYTICS PAGES (44 Components)
+// CHUTNEX ANALYTICS - Main Dashboard (direct import, not lazy)
+// ============================================================================
+import AnalyticsDashboardPage from './pages/chutney/analytics/AnalyticsDashboardPage';
+
+// ============================================================================
+// LAZY LOADED CHUTNEX ANALYTICS PAGES
 // ============================================================================
 
 // --- Overview Section (5) ---
@@ -42,14 +46,14 @@ const NodePortsPage = lazy(() => import('./pages/chutney/nodes/NodePortsPage'));
 
 // --- Circuits Section (6) ---
 const CircuitsListPage = lazy(() => import('./pages/chutney/circuits/CircuitsListPage'));
-const TrafficOverviewPage = lazy(() => import('./pages/chutney/traffic/TrafficOverviewPage'));
 const CircuitDetailPage = lazy(() => import('./pages/chutney/circuits/CircuitDetailPage'));
 const CircuitPathPage = lazy(() => import('./pages/chutney/circuits/CircuitPathPage'));
 const CircuitStatsPage = lazy(() => import('./pages/chutney/circuits/CircuitStatsPage'));
 const CircuitFiltersPage = lazy(() => import('./pages/chutney/circuits/CircuitFiltersPage'));
 const CircuitEventsPage = lazy(() => import('./pages/chutney/circuits/CircuitEventsPage'));
 
-// --- Traffic Section (6) ---
+// --- Traffic Section (7) ---
+const TrafficOverviewPage = lazy(() => import('./pages/chutney/traffic/TrafficOverviewPage'));
 const BandwidthChartPage = lazy(() => import('./pages/chutney/traffic/BandwidthChartPage'));
 const CapturesListPage = lazy(() => import('./pages/chutney/traffic/CapturesListPage'));
 const CaptureDetailPage = lazy(() => import('./pages/chutney/traffic/CaptureDetailPage'));
@@ -75,12 +79,7 @@ const SuricataAlertsPage = lazy(() => import('./pages/chutney/integration/Surica
 // --- Reports Section (1) ---
 const ReportGeneratorPage = lazy(() => import('./pages/chutney/reports/ReportGeneratorPage'));
 
-// --- Analytics Section (3) ---
-const AnalyticsDashboardPage = lazy(() => import('./pages/chutney/analytics/AnalyticsDashboardPage'));
-const AnalyticsHeaderPage = lazy(() => import('./pages/chutney/analytics/AnalyticsHeaderPage'));
-const AnalyticsTabsPage = lazy(() => import('./pages/chutney/analytics/AnalyticsTabsPage'));
-
-// --- UI Components Showcase (7) ---
+// --- UI Components Showcase (1) ---
 const UIComponentsPage = lazy(() => import('./pages/chutney/ui/UIComponentsPage'));
 
 // ============================================================================
@@ -143,14 +142,16 @@ function App() {
           <Route path="tor-networks/:id" element={<TorNetworkDetail />} />
           <Route path="tor-networks/:id/edit" element={<TorNetworkForm />} />
           
-          {/* ChutneX Analytics Dashboard (Main Entry) */}
-          <Route path="tor-networks/:id/analytics" element={<ChutneXAnalytics />} />
+          {/* ============================================ */}
+          {/* CHUTNEX ANALYTICS - MAIN ENTRY POINT         */}
+          {/* ============================================ */}
+          <Route path="tor-networks/:id/analytics" element={<AnalyticsDashboardPage />} />
           
           {/* ============================================ */}
-          {/* CHUTNEX ANALYTICS SUB-ROUTES (44 Components) */}
+          {/* CHUTNEX ANALYTICS SUB-ROUTES                 */}
           {/* ============================================ */}
           
-          {/* --- OVERVIEW SECTION (5) --- */}
+          {/* --- OVERVIEW SECTION --- */}
           <Route path="tor-networks/:id/analytics/overview" element={
             <Suspense fallback={<LoadingSpinner />}><NetworkOverviewPage /></Suspense>
           } />
@@ -167,7 +168,7 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}><TimestampsPage /></Suspense>
           } />
           
-          {/* --- NODES SECTION (6) --- */}
+          {/* --- NODES SECTION --- */}
           <Route path="tor-networks/:id/analytics/nodes" element={
             <Suspense fallback={<LoadingSpinner />}><NodeGridPage /></Suspense>
           } />
@@ -190,8 +191,13 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}><NodePortsPage /></Suspense>
           } />
           
-          <Route path="tor-networks/:id/analytics/circuits" element={<Suspense fallback={<LoadingSpinner />}><CircuitsListPage /></Suspense>} />
-          <Route path="tor-networks/:id/analytics/circuits/card" element={<Suspense fallback={<LoadingSpinner />}><CircuitDetailPage /></Suspense>} />
+          {/* --- CIRCUITS SECTION --- */}
+          <Route path="tor-networks/:id/analytics/circuits" element={
+            <Suspense fallback={<LoadingSpinner />}><CircuitsListPage /></Suspense>
+          } />
+          <Route path="tor-networks/:id/analytics/circuits/card" element={
+            <Suspense fallback={<LoadingSpinner />}><CircuitDetailPage /></Suspense>
+          } />
           <Route path="tor-networks/:id/analytics/circuits/card/:circuitId" element={
             <Suspense fallback={<LoadingSpinner />}><CircuitDetailPage /></Suspense>
           } />
@@ -208,7 +214,7 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}><CircuitEventsPage /></Suspense>
           } />
           
-          {/* --- TRAFFIC SECTION (6) --- */}
+          {/* --- TRAFFIC SECTION --- */}
           <Route path="tor-networks/:id/analytics/traffic" element={
             <Suspense fallback={<LoadingSpinner />}><TrafficOverviewPage /></Suspense>
           } />
@@ -231,7 +237,7 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}><FlowAnalysisPage /></Suspense>
           } />
           
-          {/* --- FORENSICS SECTION (4) --- */}
+          {/* --- FORENSICS SECTION --- */}
           <Route path="tor-networks/:id/analytics/forensics" element={
             <Suspense fallback={<LoadingSpinner />}><ForensicsOverviewPage /></Suspense>
           } />
@@ -245,7 +251,7 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}><CellAnalysisPage /></Suspense>
           } />
           
-          {/* --- VISUALIZATION SECTION (3) --- */}
+          {/* --- VISUALIZATION SECTION --- */}
           <Route path="tor-networks/:id/analytics/viz/topology" element={
             <Suspense fallback={<LoadingSpinner />}><NetworkTopologyPage /></Suspense>
           } />
@@ -256,7 +262,7 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}><HeatmapPage /></Suspense>
           } />
           
-          {/* --- INTEGRATION SECTION (3) --- */}
+          {/* --- INTEGRATION SECTION --- */}
           <Route path="tor-networks/:id/analytics/integration" element={
             <Suspense fallback={<LoadingSpinner />}><IntegrationHubPage /></Suspense>
           } />
@@ -267,46 +273,20 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}><SuricataAlertsPage /></Suspense>
           } />
           
-          {/* --- REPORTS SECTION (1) --- */}
+          {/* --- REPORTS SECTION --- */}
           <Route path="tor-networks/:id/analytics/reports" element={
             <Suspense fallback={<LoadingSpinner />}><ReportGeneratorPage /></Suspense>
           } />
           
-          {/* --- ANALYTICS SECTION (3) --- */}
-          <Route path="tor-networks/:id/analytics/analytics" element={
-            <Suspense fallback={<LoadingSpinner />}><AnalyticsDashboardPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/analytics/header" element={
-            <Suspense fallback={<LoadingSpinner />}><AnalyticsHeaderPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/analytics/tabs" element={
-            <Suspense fallback={<LoadingSpinner />}><AnalyticsTabsPage /></Suspense>
-          } />
-          
-          {/* --- UI COMPONENTS SECTION (7) --- */}
-          <Route path="tor-networks/:id/analytics/ui/status-badge" element={
-            <Suspense fallback={<LoadingSpinner />}><UIComponentsPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/ui/node-icon" element={
-            <Suspense fallback={<LoadingSpinner />}><UIComponentsPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/ui/bytes" element={
-            <Suspense fallback={<LoadingSpinner />}><UIComponentsPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/ui/progress" element={
-            <Suspense fallback={<LoadingSpinner />}><UIComponentsPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/ui/time-ago" element={
-            <Suspense fallback={<LoadingSpinner />}><UIComponentsPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/ui/spinner" element={
-            <Suspense fallback={<LoadingSpinner />}><UIComponentsPage /></Suspense>
-          } />
-          <Route path="tor-networks/:id/analytics/ui/table" element={
+          {/* --- UI COMPONENTS SECTION --- */}
+          <Route path="tor-networks/:id/analytics/ui/*" element={
             <Suspense fallback={<LoadingSpinner />}><UIComponentsPage /></Suspense>
           } />
           
-          {/* --- COMING SOON ROUTES (Future Features) --- */}
+          {/* ============================================ */}
+          {/* COMING SOON ROUTES (Future Features)        */}
+          {/* ============================================ */}
+          
           {/* Overview */}
           <Route path="tor-networks/:id/analytics/overview/health" element={<ComingSoonPage />} />
           <Route path="tor-networks/:id/analytics/overview/activity" element={<ComingSoonPage />} />
@@ -319,8 +299,6 @@ function App() {
           <Route path="tor-networks/:id/analytics/nodes/history" element={<ComingSoonPage />} />
           <Route path="tor-networks/:id/analytics/nodes/search" element={<ComingSoonPage />} />
           <Route path="tor-networks/:id/analytics/nodes/export" element={<ComingSoonPage />} />
-          
-          {/* Node Types */}
           <Route path="tor-networks/:id/analytics/nodes/type/*" element={<ComingSoonPage />} />
           
           {/* Circuits */}
@@ -371,20 +349,6 @@ function App() {
           <Route path="tor-networks/:id/analytics/reports/history" element={<ComingSoonPage />} />
           <Route path="tor-networks/:id/analytics/reports/branding" element={<ComingSoonPage />} />
           <Route path="tor-networks/:id/analytics/reports/compliance" element={<ComingSoonPage />} />
-          
-          {/* Analytics */}
-          <Route path="tor-networks/:id/analytics/analytics/realtime" element={<ComingSoonPage />} />
-          <Route path="tor-networks/:id/analytics/analytics/history" element={<ComingSoonPage />} />
-          <Route path="tor-networks/:id/analytics/analytics/trends" element={<ComingSoonPage />} />
-          <Route path="tor-networks/:id/analytics/analytics/custom" element={<ComingSoonPage />} />
-          <Route path="tor-networks/:id/analytics/analytics/kpi" element={<ComingSoonPage />} />
-          <Route path="tor-networks/:id/analytics/analytics/predict" element={<ComingSoonPage />} />
-          <Route path="tor-networks/:id/analytics/analytics/explorer" element={<ComingSoonPage />} />
-          
-          {/* UI Components */}
-          <Route path="tor-networks/:id/analytics/ui/charts" element={<ComingSoonPage />} />
-          <Route path="tor-networks/:id/analytics/ui/forms" element={<ComingSoonPage />} />
-          <Route path="tor-networks/:id/analytics/ui/modals" element={<ComingSoonPage />} />
           
           {/* Settings */}
           <Route path="tor-networks/:id/analytics/settings/*" element={<ComingSoonPage />} />
