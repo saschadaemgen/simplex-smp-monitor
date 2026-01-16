@@ -40,6 +40,7 @@ urlpatterns = [
 
     # Chutney API
     path('api/v1/chutney/', include('chutney.api.urls')),
+    path('api/chutney/', include('chutney.api.urls')),
 ]
 
 # Media files - BEFORE SPA catch-all!
