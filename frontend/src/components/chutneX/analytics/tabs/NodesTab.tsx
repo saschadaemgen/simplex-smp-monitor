@@ -30,7 +30,6 @@ import {
   Copy,
   Wifi,
   GitBranch,
-  Terminal,
   Container,
   Fingerprint,
   FileText,
@@ -83,10 +82,10 @@ const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; la
 };
 
 // =============================================================================
-// TYPES - COMPLETE TorNode (ALL 34 fields)
+// TYPES - COMPLETE TorNode (ALL 35 Model fields)
 // =============================================================================
 export interface TorNodeData {
-  // Identification (5)
+  // Identification (4)
   id: string;
   network_id?: string;
   name: string;
@@ -102,7 +101,6 @@ export interface TorNodeData {
   socks_port?: number;
   or_port?: number;
   dir_port?: number;
-  address?: string;
   
   // Tor Identity (3)
   fingerprint?: string;
@@ -111,7 +109,6 @@ export interface TorNodeData {
   
   // Hidden Service (3)
   onion_address?: string;
-  hs_address?: string; // Legacy alias
   hs_port?: number;
   hs_target_port?: number;
   
@@ -128,21 +125,21 @@ export interface TorNodeData {
   capture_interface?: string;
   capture_file_path?: string;
   
-  // Statistics (6)
+  // Statistics (4)
   bytes_read: number;
   bytes_written: number;
-  circuits_active?: number;
   circuits_created?: number;
+  circuits_active?: number;
+  
+  // Bandwidth (2)
   bandwidth_rate?: number;
   bandwidth_burst?: number;
   
-  // Platform Info (2)
-  platform?: string;
-  tor_version?: string;
-  
-  // Timestamps (2)
+  // Timestamps (4)
+  created_at?: string;
+  updated_at?: string;
   started_at?: string;
-  uptime_seconds?: number;
+  last_seen?: string;
 }
 
 interface NodesTabProps {
@@ -166,8 +163,12 @@ const formatBytesPerSec = (bytes: number): string => {
   return `${formatBytes(bytes)}/s`;
 };
 
-const formatUptime = (seconds?: number): string => {
-  if (!seconds) return '-';
+const formatUptime = (started_at?: string): string => {
+  if (!started_at) return '-';
+  const startTime = new Date(started_at).getTime();
+  const now = Date.now();
+  const seconds = Math.floor((now - startTime) / 1000);
+  
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -175,6 +176,17 @@ const formatUptime = (seconds?: number): string => {
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
+};
+
+const formatDateTime = (timestamp?: string): string => {
+  if (!timestamp) return '-';
+  return new Date(timestamp).toLocaleString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
 const copyToClipboard = (text: string) => {
@@ -301,8 +313,6 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({ node, bandwidth, onCl
   const StatusIcon = statusConfig.icon;
   const nodeColor = NODE_COLORS[node.node_type] || NEON;
   
-  const onionAddress = node.onion_address || node.hs_address;
-  
   return (
     <div 
       className="rounded-xl overflow-hidden"
@@ -351,7 +361,7 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({ node, bandwidth, onCl
             {node.status_message && (
               <DetailRow label="Message" value={node.status_message} mono />
             )}
-            <DetailRow label="Uptime" value={formatUptime(node.uptime_seconds)} />
+            <DetailRow label="Uptime" value={formatUptime(node.started_at)} />
           </DetailSection>
           
           {/* Identity Section */}
@@ -402,12 +412,12 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({ node, bandwidth, onCl
           </DetailSection>
           
           {/* Hidden Service Section */}
-          {(onionAddress || node.hs_port) && (
+          {(node.onion_address || node.hs_port) && (
             <DetailSection title="Hidden Service" icon={Eye}>
-              {onionAddress && (
+              {node.onion_address && (
                 <DetailRow 
                   label="Onion Address" 
-                  value={onionAddress} 
+                  value={node.onion_address} 
                   mono 
                   copyable 
                 />
@@ -517,17 +527,13 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({ node, bandwidth, onCl
             )}
           </DetailSection>
           
-          {/* Platform Section */}
-          {(node.platform || node.tor_version) && (
-            <DetailSection title="Platform" icon={Terminal}>
-              {node.tor_version && (
-                <DetailRow label="Tor Version" value={node.tor_version} mono />
-              )}
-              {node.platform && (
-                <DetailRow label="Platform" value={node.platform} mono />
-              )}
-            </DetailSection>
-          )}
+          {/* Timestamps Section */}
+          <DetailSection title="Timestamps" icon={Activity}>
+            <DetailRow label="Created" value={formatDateTime(node.created_at)} />
+            <DetailRow label="Updated" value={formatDateTime(node.updated_at)} />
+            <DetailRow label="Started" value={formatDateTime(node.started_at)} />
+            <DetailRow label="Last Seen" value={formatDateTime(node.last_seen)} color={node.last_seen ? NEON : '#64748b'} />
+          </DetailSection>
         </div>
       </div>
     </div>

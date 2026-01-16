@@ -33,14 +33,11 @@ import {
   FileText,
   HardDrive,
   Clock,
-  Hash,
   Filter,
   Eye,
   Copy,
   ChevronRight,
-  Database,
   Wifi,
-  TrendingUp,
   BarChart2,
 } from 'lucide-react';
 import { TorEvent } from '../../../../hooks/useTorWebSocket';
@@ -62,46 +59,55 @@ const LANES = [
 ];
 
 // =============================================================================
-// TYPES - COMPLETE TrafficCapture (ALL 20+ fields)
+// TYPES - COMPLETE TrafficCapture (ALL 25 Model fields)
 // =============================================================================
 export interface TrafficCaptureData {
-  // Identification
+  // Identification (3)
   id: string;
-  name: string;
-  network_id?: string;
   node_id?: string;
-  node_name?: string;
+  name: string;
   
-  // File Info
+  // Helper (from joined data)
+  node_name?: string;
+  network_id?: string;
+  
+  // Capture Configuration (3)
+  capture_type: 'continuous' | 'triggered' | 'manual' | 'circuit';
+  filter_expression?: string;
+  interface?: string;
+  
+  // File Info (3)
   file_path: string;
   file_size_bytes: number;
   file_hash_sha256?: string;
   
-  // Timing
+  // Time Period (3)
   started_at: string;
   stopped_at?: string;
   duration_seconds?: number;
+  
+  // Packet Statistics (3)
+  packet_count: number;
+  bytes_captured: number;
+  packets_dropped?: number;
+  
+  // Analysis Status (1)
+  status: 'recording' | 'completed' | 'analyzing' | 'analyzed' | 'error' | 'deleted';
+  
+  // Analysis Results (4)
+  unique_flows?: number;
+  tor_cells_detected?: number;
   first_packet_time?: string;
   last_packet_time?: string;
-  
-  // Capture Config
-  interface?: string;
-  filter_expression?: string;
-  
-  // Packet Statistics
-  packet_count: number;
-  packets_dropped?: number;
-  bytes_captured: number;
-  
-  // Analysis
-  tor_cells_detected?: number;
-  unique_flows?: number;
   avg_inter_packet_delay_ms?: number;
-  related_circuit_id?: string;
-  analysis_notes?: string;
   
-  // Status
-  status?: 'capturing' | 'completed' | 'error';
+  // Notes & Relations (2)
+  analysis_notes?: string;
+  related_circuit_id?: string;
+  
+  // Timestamps (2)
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface ForensicsTabProps {
@@ -128,15 +134,6 @@ const formatDuration = (seconds?: number): string => {
   const hours = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   return `${hours}h ${mins}m`;
-};
-
-const formatTime = (timestamp?: string): string => {
-  if (!timestamp) return '-';
-  return new Date(timestamp).toLocaleTimeString('de-DE', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
 };
 
 const formatDateTime = (timestamp?: string): string => {
@@ -250,7 +247,7 @@ const CaptureStats: React.FC<{ captures: TrafficCaptureData[] }> = ({ captures }
       totalPackets,
       totalCells,
       totalFlows,
-      active: captures.filter(c => c.status === 'capturing').length,
+      active: captures.filter(c => c.status === 'recording').length,
     };
   }, [captures]);
   
@@ -258,7 +255,7 @@ const CaptureStats: React.FC<{ captures: TrafficCaptureData[] }> = ({ captures }
     <div className="grid grid-cols-6 gap-3 mb-4">
       <StatBadge icon={FileText} label="Captures" value={stats.count} color={NEON} />
       <StatBadge icon={Activity} label="Active" value={stats.active} color="#4ade80" />
-      <StatBadge icon={Database} label="Total Size" value={formatBytes(stats.totalBytes)} color={LIGHT_NEON} />
+      <StatBadge icon={HardDrive} label="Total Size" value={formatBytes(stats.totalBytes)} color={LIGHT_NEON} />
       <StatBadge icon={BarChart2} label="Packets" value={formatNumber(stats.totalPackets)} color={DARK_NEON} />
       <StatBadge icon={Shield} label="Tor Cells" value={formatNumber(stats.totalCells)} color="#A5DFE1" />
       <StatBadge icon={GitBranch} label="Flows" value={formatNumber(stats.totalFlows)} color="#6BB8BA" />
@@ -292,9 +289,25 @@ interface CaptureRowProps {
   onClick: () => void;
 }
 
+const CAPTURE_TYPE_LABELS: Record<string, string> = {
+  continuous: 'Continuous',
+  triggered: 'Triggered',
+  manual: 'Manual',
+  circuit: 'Circuit',
+};
+
+const CAPTURE_TYPE_COLORS: Record<string, string> = {
+  continuous: NEON,
+  triggered: '#fbbf24',
+  manual: LIGHT_NEON,
+  circuit: DARK_NEON,
+};
+
 const CaptureRow: React.FC<CaptureRowProps> = ({ capture, isSelected, onClick }) => {
-  const statusColor = capture.status === 'capturing' ? '#4ade80' : 
-                      capture.status === 'error' ? '#f87171' : '#64748b';
+  const statusColor = capture.status === 'recording' ? '#4ade80' : 
+                      capture.status === 'error' ? '#f87171' : 
+                      capture.status === 'analyzing' ? '#fbbf24' :
+                      capture.status === 'analyzed' ? NEON : '#64748b';
   
   return (
     <div 
@@ -305,17 +318,30 @@ const CaptureRow: React.FC<CaptureRowProps> = ({ capture, isSelected, onClick })
     >
       {/* Status */}
       <div 
-        className="w-2 h-2 rounded-full"
+        className="w-2 h-2 rounded-full flex-shrink-0"
         style={{ backgroundColor: statusColor }}
       />
       
       {/* Name */}
-      <div className="w-32 truncate">
+      <div className="w-28 truncate">
         <span className="text-sm text-white">{capture.name}</span>
       </div>
       
+      {/* Type */}
+      <div className="w-20">
+        <span 
+          className="text-xs px-1.5 py-0.5 rounded"
+          style={{ 
+            backgroundColor: `${CAPTURE_TYPE_COLORS[capture.capture_type] || NEON}20`,
+            color: CAPTURE_TYPE_COLORS[capture.capture_type] || NEON,
+          }}
+        >
+          {CAPTURE_TYPE_LABELS[capture.capture_type] || capture.capture_type}
+        </span>
+      </div>
+      
       {/* Node */}
-      <div className="w-24 truncate">
+      <div className="w-20 truncate">
         <span className="text-xs text-gray-400">{capture.node_name || '-'}</span>
       </div>
       
@@ -354,7 +380,7 @@ const CaptureRow: React.FC<CaptureRowProps> = ({ capture, isSelected, onClick })
         </span>
       </div>
       
-      <ChevronRight size={14} className="text-gray-600" />
+      <ChevronRight size={14} className="text-gray-600 flex-shrink-0" />
     </div>
   );
 };
@@ -366,8 +392,10 @@ interface CaptureDetailPanelProps {
 }
 
 const CaptureDetailPanel: React.FC<CaptureDetailPanelProps> = ({ capture, onClose }) => {
-  const statusColor = capture.status === 'capturing' ? '#4ade80' : 
-                      capture.status === 'error' ? '#f87171' : '#64748b';
+  const statusColor = capture.status === 'recording' ? '#4ade80' : 
+                      capture.status === 'error' ? '#f87171' : 
+                      capture.status === 'analyzing' ? '#fbbf24' :
+                      capture.status === 'analyzed' ? NEON : '#64748b';
   
   return (
     <div 
@@ -390,11 +418,20 @@ const CaptureDetailPanel: React.FC<CaptureDetailPanelProps> = ({ capture, onClos
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <span 
+            className="px-2 py-0.5 rounded text-xs"
+            style={{ 
+              backgroundColor: `${CAPTURE_TYPE_COLORS[capture.capture_type] || NEON}20`,
+              color: CAPTURE_TYPE_COLORS[capture.capture_type] || NEON,
+            }}
+          >
+            {CAPTURE_TYPE_LABELS[capture.capture_type] || capture.capture_type}
+          </span>
           <div 
             className="px-2 py-1 rounded text-xs font-medium"
             style={{ backgroundColor: `${statusColor}20`, color: statusColor }}
           >
-            {capture.status || 'completed'}
+            {capture.status}
           </div>
           <button 
             onClick={onClose}
@@ -422,8 +459,8 @@ const CaptureDetailPanel: React.FC<CaptureDetailPanelProps> = ({ capture, onClos
           )}
         </DetailSection>
         
-        {/* Timing */}
-        <DetailSection title="Timing" icon={Clock}>
+        {/* Capture Timing */}
+        <DetailSection title="Capture Timing" icon={Clock}>
           <DetailRow label="Started" value={formatDateTime(capture.started_at)} />
           <DetailRow label="Stopped" value={formatDateTime(capture.stopped_at)} />
           <DetailRow label="Duration" value={formatDuration(capture.duration_seconds)} color={NEON} />
@@ -437,6 +474,11 @@ const CaptureDetailPanel: React.FC<CaptureDetailPanelProps> = ({ capture, onClos
         
         {/* Capture Configuration */}
         <DetailSection title="Capture Configuration" icon={Filter}>
+          <DetailRow 
+            label="Type" 
+            value={CAPTURE_TYPE_LABELS[capture.capture_type] || capture.capture_type} 
+            color={CAPTURE_TYPE_COLORS[capture.capture_type] || NEON}
+          />
           {capture.interface && (
             <DetailRow label="Interface" value={capture.interface} mono />
           )}
@@ -507,6 +549,12 @@ const CaptureDetailPanel: React.FC<CaptureDetailPanelProps> = ({ capture, onClos
             </div>
           </DetailSection>
         )}
+        
+        {/* Timestamps */}
+        <DetailSection title="Record Timestamps" icon={Clock}>
+          <DetailRow label="Created" value={formatDateTime(capture.created_at)} />
+          <DetailRow label="Updated" value={formatDateTime(capture.updated_at)} />
+        </DetailSection>
         
         {/* Actions */}
         <div className="flex gap-3 pt-2">
@@ -898,8 +946,9 @@ export const ForensicsTab: React.FC<ForensicsTabProps> = ({
               {/* Header */}
               <div className="flex items-center gap-4 p-3 border-b border-gray-700/50 text-xs text-gray-500">
                 <div className="w-2"></div>
-                <div className="w-32">Name</div>
-                <div className="w-24">Node</div>
+                <div className="w-28">Name</div>
+                <div className="w-20">Type</div>
+                <div className="w-20">Node</div>
                 <div className="w-20 text-right">Size</div>
                 <div className="w-20 text-right">Packets</div>
                 <div className="w-20 text-right">Duration</div>
