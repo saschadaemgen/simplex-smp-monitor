@@ -7,7 +7,7 @@ import {
   ContainerStats 
 } from '../api/client';
 
-// Color scheme
+// Color scheme - matching global design
 const neonBlue = '#88CED0';
 const neonGlow = '0 0 10px rgba(136, 206, 208, 0.6), 0 0 20px rgba(136, 206, 208, 0.3)';
 
@@ -17,21 +17,15 @@ function isTorContainer(container: { name: string; networks?: Record<string, any
   const image = (container.image || '').toLowerCase();
   const networks = Object.keys(container.networks || {}).map(n => n.toLowerCase());
   
-  // Check name
   if (name.includes('tor') || name.includes('chutnex') || name.includes('chutney')) {
     return true;
   }
-  
-  // Check image
   if (image.includes('tor') || image.includes('chutnex') || image.includes('chutney')) {
     return true;
   }
-  
-  // Check networks
   if (networks.some(n => n.includes('tor') || n.includes('chutnex') || n.includes('chutney'))) {
     return true;
   }
-  
   return false;
 }
 
@@ -63,7 +57,6 @@ function formatDate(dateStr: string): string {
 
 // Progress Bar Component with Glow
 function GlowBar({ percent, color, glow }: { percent: number; color: string; glow: string }) {
-  // Minimum 3% width so it's visible but subtle
   const displayPercent = Math.max(percent, 3);
   const isWarning = percent > 80;
   const barColor = isWarning ? '#ef4444' : color;
@@ -104,7 +97,6 @@ function ExpandableRow({
   t: any;
 }) {
   const isTor = isTorContainer(container);
-  // Stats always in neonBlue
   const statsColor = neonBlue;
   const statsGlowStyle = neonGlow;
 
@@ -146,7 +138,7 @@ function ExpandableRow({
   return (
     <>
       <tr 
-        className={`border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors cursor-pointer ${isSelected ? 'bg-slate-800/30' : ''} ${isExpanded ? 'bg-slate-800/40' : ''}`}
+        className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors cursor-pointer ${isSelected ? 'bg-slate-800/20' : ''} ${isExpanded ? 'bg-slate-800/30' : ''}`}
         onClick={onToggleExpand}
       >
         <td className="p-3" onClick={(e) => e.stopPropagation()}>
@@ -264,7 +256,7 @@ function ExpandableRow({
         </td>
       </tr>
       {isExpanded && (
-        <tr className="bg-slate-800/20">
+        <tr className="bg-slate-900/50">
           <td colSpan={10} className="p-0">
             <div className="p-4 border-t border-slate-800/50 animate-fade-in">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -308,7 +300,7 @@ function ExpandableRow({
                 </div>
               </div>
               {container.mounts && container.mounts.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-700/50">
+                <div className="mt-4 pt-4 border-t border-slate-800/50">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Mounts</h4>
                   <div className="space-y-1">
                     {container.mounts.map((m, i) => (
@@ -323,13 +315,13 @@ function ExpandableRow({
                 </div>
               )}
               {container.networks && Object.keys(container.networks).length > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-700/50">
+                <div className="mt-4 pt-4 border-t border-slate-800/50">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Networks</h4>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(container.networks).map(([name, info]) => {
                       const isNetworkTor = name.toLowerCase().includes('tor') || name.toLowerCase().includes('chutnex');
                       return (
-                        <div key={name} className={`rounded px-2 py-1 text-xs ${isNetworkTor ? 'bg-purple-500/20' : 'bg-slate-700/50'}`}>
+                        <div key={name} className={`rounded px-2 py-1 text-xs ${isNetworkTor ? 'bg-purple-500/20' : 'bg-slate-800/50'}`}>
                           <span className={isNetworkTor ? 'text-purple-300' : 'text-white'}>{isNetworkTor && '🧅 '}{name}</span>
                           {info.ip_address && <span className="text-slate-400 ml-2">{info.ip_address}</span>}
                         </div>
@@ -351,7 +343,6 @@ function ContainerCard({ container, stats, isSelected, isLoading, onToggleSelect
   onToggleSelect: () => void; onAction: (action: string) => void; onRemove: (force: boolean) => void; onOpenLogs: () => void; t: any;
 }) {
   const isTor = isTorContainer(container);
-  // Stats always in neonBlue
   const statsColor = neonBlue;
   const statsGlowStyle = neonGlow;
 
@@ -379,8 +370,8 @@ function ContainerCard({ container, stats, isSelected, isLoading, onToggleSelect
   };
 
   return (
-    <div className={`bg-slate-900 rounded-lg border transition-all overflow-hidden ${isSelected ? 'border-cyan-500 ring-1 ring-cyan-500/50' : isTor ? 'border-purple-800 hover:border-purple-700' : 'border-slate-800 hover:border-slate-700'}`}>
-      <div className="p-3 border-b border-slate-800 flex items-center gap-3">
+    <div className={`bg-slate-900/80 rounded-lg border transition-all overflow-hidden ${isSelected ? 'border-cyan-500 ring-1 ring-cyan-500/50' : isTor ? 'border-purple-800/50 hover:border-purple-700/50' : 'border-slate-800/50 hover:border-slate-700/50'}`}>
+      <div className="p-3 border-b border-slate-800/50 flex items-center gap-3">
         <input type="checkbox" checked={isSelected} onChange={onToggleSelect} className="rounded border-slate-600 bg-slate-800 text-cyan-500"/>
         <div className="relative">
           <div 
@@ -426,7 +417,7 @@ function ContainerCard({ container, stats, isSelected, isLoading, onToggleSelect
           </>
         )}
       </div>
-      <div className="p-2 border-t border-slate-800 flex justify-between">
+      <div className="p-2 border-t border-slate-800/50 flex justify-between">
         <button onClick={onOpenLogs} className="p-1.5 text-slate-400 hover:text-white rounded" title={t('docker.logs')}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         </button>
@@ -471,7 +462,6 @@ export default function Docker() {
   const [logs, setLogs] = useState<string>('');
   const [logsLoading, setLogsLoading] = useState(false);
 
-  // Count Tor containers
   const torCount = containers.filter(c => c.status === 'running' && isTorContainer(c)).length;
   const normalCount = containers.filter(c => c.status === 'running' && !isTorContainer(c)).length;
 
@@ -570,67 +560,84 @@ export default function Docker() {
     )}</span>
   );
 
-  if (loading) return <div className="flex justify-center items-center py-24"><div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: neonBlue }}></div></div>;
+  if (loading) return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: neonBlue }}></div>
+      </div>
+    </div>
+  );
+
   if (error) return (
-    <div className="text-center py-24">
-      <div className="text-red-500 text-6xl mb-4">🐳</div>
-      <h2 className="text-xl font-semibold text-white mb-2">{t('docker.connectionError')}</h2>
-      <p className="text-slate-500">{error}</p>
-      <button onClick={() => { setLoading(true); fetchContainers(); }} className="mt-4 px-4 py-2 rounded-lg border" style={{ borderColor: neonBlue, color: neonBlue }}>{t('common.retry')}</button>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">🐳</div>
+          <h2 className="text-xl font-semibold text-white mb-2">{t('docker.connectionError')}</h2>
+          <p className="text-slate-500">{error}</p>
+          <button onClick={() => { setLoading(true); fetchContainers(); }} className="mt-4 px-4 py-2 rounded-lg border" style={{ borderColor: neonBlue, color: neonBlue }}>{t('common.retry')}</button>
+        </div>
+      </div>
     </div>
   );
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: neonBlue }}>🐳 {t('docker.title')}</h1>
-          <p className="text-slate-500 text-sm mt-1">{t('docker.subtitle')}</p>
-        </div>
-        {dockerInfo && (
-          <div className="flex items-center gap-4 text-sm">
-            {torCount > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500" style={{ boxShadow: '0 0 8px rgba(125, 70, 152, 0.6)' }}></span>
-                <span className="text-slate-400">{torCount} 🧅 tor</span>
-              </div>
-            )}
-            {normalCount > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-600" style={{ boxShadow: '0 0 8px rgba(74, 155, 160, 0.6)' }}></span>
-                <span className="text-slate-400">{normalCount} {t('docker.running').toLowerCase()}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
-              <span className="text-slate-400">{dockerInfo.containers_stopped} {t('docker.stopped').toLowerCase()}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" style={{ boxShadow: '0 0 8px rgba(245, 158, 11, 0.6)' }}></span>
-              <span className="text-slate-400">{dockerInfo.containers_paused} {t('docker.paused').toLowerCase()}</span>
-            </div>
+    <div className="flex flex-col h-full">
+      {/* Header Section */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800/50">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold flex items-center gap-2" style={{ color: neonBlue }}>
+              🐳 {t('docker.title')}
+            </h1>
+            <p className="text-slate-500 text-sm mt-0.5">{t('docker.subtitle')}</p>
           </div>
-        )}
+          {dockerInfo && (
+            <div className="flex items-center gap-4 text-sm">
+              {torCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" style={{ boxShadow: '0 0 8px rgba(125, 70, 152, 0.6)' }}></span>
+                  <span className="text-slate-400">{torCount} 🧅 tor</span>
+                </div>
+              )}
+              {normalCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-600 animate-pulse" style={{ boxShadow: '0 0 8px rgba(74, 155, 160, 0.6)' }}></span>
+                  <span className="text-slate-400">{normalCount} {t('docker.running').toLowerCase()}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+                <span className="text-slate-400">{dockerInfo.containers_stopped} {t('docker.stopped').toLowerCase()}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500" style={{ boxShadow: '0 0 8px rgba(245, 158, 11, 0.6)' }}></span>
+                <span className="text-slate-400">{dockerInfo.containers_paused} {t('docker.paused').toLowerCase()}</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="bg-slate-900 rounded-lg border border-slate-800 p-3">
+      {/* Toolbar Section */}
+      <div className="flex-shrink-0 px-6 py-3 border-b border-slate-800/50">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px] max-w-xs">
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('docker.searchPlaceholder')}
-              className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-1.5 pl-8 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none"/>
+              className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-1.5 pl-8 text-sm text-white placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none transition-colors"/>
             <svg className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-800 border border-slate-700 rounded px-3 py-1.5 text-sm text-white focus:border-cyan-500 focus:outline-none">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-1.5 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
             <option value="all">{t('docker.filter.all')}</option>
             <option value="running">{t('docker.filter.running')}</option>
             <option value="exited">{t('docker.filter.exited')}</option>
             <option value="paused">{t('docker.filter.paused')}</option>
           </select>
-          <div className="flex rounded overflow-hidden border border-slate-700">
-            <button onClick={() => setViewMode('table')} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === 'table' ? 'bg-slate-700 text-white' : 'bg-slate-800 text-slate-400'}`}>
+          <div className="flex rounded-lg overflow-hidden border border-slate-700/50">
+            <button onClick={() => setViewMode('table')} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === 'table' ? 'bg-slate-700/50 text-white' : 'bg-slate-800/30 text-slate-400 hover:text-white'}`}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
             </button>
-            <button onClick={() => setViewMode('cards')} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === 'cards' ? 'bg-slate-700 text-white' : 'bg-slate-800 text-slate-400'}`}>
+            <button onClick={() => setViewMode('cards')} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === 'cards' ? 'bg-slate-700/50 text-white' : 'bg-slate-800/30 text-slate-400 hover:text-white'}`}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
             </button>
           </div>
@@ -638,72 +645,76 @@ export default function Docker() {
           {selectedContainers.size > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-400">{selectedContainers.size} {t('docker.selected')}</span>
-              <button onClick={() => handleBulkAction('start')} className="px-2 py-1 text-xs rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30">{t('docker.startAll')}</button>
-              <button onClick={() => handleBulkAction('stop')} className="px-2 py-1 text-xs rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30">{t('docker.stopAll')}</button>
-              <button onClick={() => handleBulkAction('remove')} className="px-2 py-1 text-xs rounded bg-red-500/20 text-red-400 hover:bg-red-500/30">{t('docker.removeAll')}</button>
+              <button onClick={() => handleBulkAction('start')} className="px-2 py-1 text-xs rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors">{t('docker.startAll')}</button>
+              <button onClick={() => handleBulkAction('stop')} className="px-2 py-1 text-xs rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors">{t('docker.stopAll')}</button>
+              <button onClick={() => handleBulkAction('remove')} className="px-2 py-1 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">{t('docker.removeAll')}</button>
             </div>
           )}
-          <button onClick={handlePrune} disabled={actionLoading === 'prune'} className="px-3 py-1.5 text-sm rounded border border-slate-700 text-slate-400 hover:text-white hover:border-slate-600">{t('docker.prune')}</button>
-          <button onClick={() => { fetchContainers(); fetchStats(); fetchDockerInfo(); }} className="px-3 py-1.5 text-sm rounded border transition-all" style={{ borderColor: neonBlue, color: neonBlue, boxShadow: neonGlow }}>{t('common.refresh')}</button>
+          <button onClick={handlePrune} disabled={actionLoading === 'prune'} className="px-3 py-1.5 text-sm rounded-lg border border-slate-700/50 text-slate-400 hover:text-white hover:border-slate-600/50 transition-colors">{t('docker.prune')}</button>
+          <button onClick={() => { fetchContainers(); fetchStats(); fetchDockerInfo(); }} className="px-3 py-1.5 text-sm rounded-lg border transition-all hover:bg-slate-800/50" style={{ borderColor: `${neonBlue}50`, color: neonBlue }}>{t('common.refresh')}</button>
         </div>
       </div>
 
-      {viewMode === 'table' ? (
-        <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 text-left">
-                  <th className="p-3 w-10"><input type="checkbox" checked={selectedContainers.size === filteredContainers.length && filteredContainers.length > 0} onChange={toggleSelectAll} className="rounded border-slate-600 bg-slate-800 text-cyan-500"/></th>
-                  <th className="p-3 w-8"></th>
-                  <th className="p-3 w-8"></th>
-                  <th className="p-3 cursor-pointer hover:text-white text-slate-400 select-none" onClick={() => handleSort('name')}>Name <SortIcon field="name"/></th>
-                  <th className="p-3 cursor-pointer hover:text-white text-slate-400 select-none" onClick={() => handleSort('image')}>Image <SortIcon field="image"/></th>
-                  <th className="p-3 text-slate-400 w-20">Size</th>
-                  <th className="p-3 cursor-pointer hover:text-white text-slate-400 select-none" onClick={() => handleSort('status')}>Status <SortIcon field="status"/></th>
-                  <th className="p-3 text-slate-400 w-32">CPU</th>
-                  <th className="p-3 text-slate-400 w-36">Memory</th>
-                  <th className="p-3 text-slate-400 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredContainers.length === 0 ? (
-                  <tr><td colSpan={10} className="p-8 text-center text-slate-500"><div className="text-4xl mb-2">🐳</div>{t('docker.noContainers')}</td></tr>
-                ) : filteredContainers.map(container => (
-                  <ExpandableRow key={container.id} container={container} stats={containerStats[container.id]} isSelected={selectedContainers.has(container.id)} isExpanded={expandedRows.has(container.id)} isLoading={!!actionLoading?.startsWith(container.id)}
-                    onToggleSelect={() => toggleSelection(container.id)} onToggleExpand={() => toggleExpand(container.id)} onAction={(a, e) => handleAction(container.id, a, e)} onRemove={(f, e) => handleRemove(container.id, f, e)} onOpenLogs={(e) => openLogs(container.id, container.name, e)} t={t}/>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="border-t border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-500">
-            <span>{filteredContainers.length} containers</span>
-            {dockerInfo && <span>Docker {dockerInfo.docker_version} • {dockerInfo.images_total} images • {dockerInfo.cpus} CPUs • {formatBytes(dockerInfo.memory_total)} RAM</span>}
-          </div>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredContainers.length === 0 ? (
-            <div className="col-span-full bg-slate-900 rounded-lg border border-slate-800 p-12 text-center">
-              <div className="text-6xl mb-4">🐳</div>
-              <h3 className="text-xl font-semibold text-white mb-2">{t('docker.noContainers')}</h3>
-              <p className="text-slate-500">{t('docker.noContainersDesc')}</p>
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-auto min-h-0 px-6 py-4">
+        {viewMode === 'table' ? (
+          <div className="bg-slate-900/50 rounded-lg border border-slate-800/50 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-800/50 text-left">
+                    <th className="p-3 w-10"><input type="checkbox" checked={selectedContainers.size === filteredContainers.length && filteredContainers.length > 0} onChange={toggleSelectAll} className="rounded border-slate-600 bg-slate-800 text-cyan-500"/></th>
+                    <th className="p-3 w-8"></th>
+                    <th className="p-3 w-8"></th>
+                    <th className="p-3 cursor-pointer hover:text-white text-slate-400 select-none" onClick={() => handleSort('name')}>Name <SortIcon field="name"/></th>
+                    <th className="p-3 cursor-pointer hover:text-white text-slate-400 select-none" onClick={() => handleSort('image')}>Image <SortIcon field="image"/></th>
+                    <th className="p-3 text-slate-400 w-20">Size</th>
+                    <th className="p-3 cursor-pointer hover:text-white text-slate-400 select-none" onClick={() => handleSort('status')}>Status <SortIcon field="status"/></th>
+                    <th className="p-3 text-slate-400 w-32">CPU</th>
+                    <th className="p-3 text-slate-400 w-36">Memory</th>
+                    <th className="p-3 text-slate-400 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredContainers.length === 0 ? (
+                    <tr><td colSpan={10} className="p-8 text-center text-slate-500"><div className="text-4xl mb-2">🐳</div>{t('docker.noContainers')}</td></tr>
+                  ) : filteredContainers.map(container => (
+                    <ExpandableRow key={container.id} container={container} stats={containerStats[container.id]} isSelected={selectedContainers.has(container.id)} isExpanded={expandedRows.has(container.id)} isLoading={!!actionLoading?.startsWith(container.id)}
+                      onToggleSelect={() => toggleSelection(container.id)} onToggleExpand={() => toggleExpand(container.id)} onAction={(a, e) => handleAction(container.id, a, e)} onRemove={(f, e) => handleRemove(container.id, f, e)} onOpenLogs={(e) => openLogs(container.id, container.name, e)} t={t}/>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ) : filteredContainers.map(container => (
-            <ContainerCard key={container.id} container={container} stats={containerStats[container.id]} isSelected={selectedContainers.has(container.id)} isLoading={!!actionLoading?.startsWith(container.id)}
-              onToggleSelect={() => toggleSelection(container.id)} onAction={(a) => handleAction(container.id, a)} onRemove={(f) => handleRemove(container.id, f)} onOpenLogs={() => openLogs(container.id, container.name)} t={t}/>
-          ))}
-        </div>
-      )}
+            <div className="border-t border-slate-800/50 px-4 py-2 flex items-center justify-between text-xs text-slate-500">
+              <span>{filteredContainers.length} containers</span>
+              {dockerInfo && <span>Docker {dockerInfo.docker_version} • {dockerInfo.images_total} images • {dockerInfo.cpus} CPUs • {formatBytes(dockerInfo.memory_total)} RAM</span>}
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredContainers.length === 0 ? (
+              <div className="col-span-full bg-slate-900/50 rounded-lg border border-slate-800/50 p-12 text-center">
+                <div className="text-6xl mb-4">🐳</div>
+                <h3 className="text-xl font-semibold text-white mb-2">{t('docker.noContainers')}</h3>
+                <p className="text-slate-500">{t('docker.noContainersDesc')}</p>
+              </div>
+            ) : filteredContainers.map(container => (
+              <ContainerCard key={container.id} container={container} stats={containerStats[container.id]} isSelected={selectedContainers.has(container.id)} isLoading={!!actionLoading?.startsWith(container.id)}
+                onToggleSelect={() => toggleSelection(container.id)} onAction={(a) => handleAction(container.id, a)} onRemove={(f) => handleRemove(container.id, f)} onOpenLogs={() => openLogs(container.id, container.name)} t={t}/>
+            ))}
+          </div>
+        )}
+      </div>
 
+      {/* Logs Modal */}
       {logsModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-lg border border-slate-700 w-full max-w-5xl max-h-[85vh] flex flex-col">
-            <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-lg border border-slate-700/50 w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
               <h3 className="font-medium" style={{ color: neonBlue }}>📋 {logsModal.name}</h3>
               <div className="flex items-center gap-2">
-                <button onClick={() => openLogs(logsModal.containerId, logsModal.name)} className="px-2 py-1 text-xs rounded border border-slate-600 text-slate-400 hover:text-white">{t('common.refresh')}</button>
-                <button onClick={() => setLogsModal(null)} className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
+                <button onClick={() => openLogs(logsModal.containerId, logsModal.name)} className="px-2 py-1 text-xs rounded-lg border border-slate-600/50 text-slate-400 hover:text-white transition-colors">{t('common.refresh')}</button>
+                <button onClick={() => setLogsModal(null)} className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>

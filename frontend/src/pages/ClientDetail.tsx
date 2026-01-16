@@ -64,9 +64,14 @@ export default function ClientDetail() {
 
   // Neon Button Style
   const neonButtonStyle = {
-    backgroundColor: 'rgb(30, 41, 59)',
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
     color: neonBlue,
-    border: `1px solid ${neonBlue}`,
+    border: `1px solid rgba(136, 206, 208, 0.3)`,
+    boxShadow: 'none'
+  };
+
+  const neonButtonHoverStyle = {
+    ...neonButtonStyle,
     boxShadow: neonGlow
   };
 
@@ -293,20 +298,26 @@ export default function ClientDetail() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-24">
-        <div 
-          className="animate-spin rounded-full h-12 w-12 border-b-2"
-          style={{ borderColor: neonBlue }}
-        ></div>
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex justify-center items-center">
+          <div 
+            className="animate-spin rounded-full h-12 w-12 border-b-2"
+            style={{ borderColor: neonBlue }}
+          ></div>
+        </div>
       </div>
     );
   }
 
   if (!client) {
     return (
-      <div className="text-center py-24">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">{t('clients.clientNotFound')}</h2>
-        <Link to="/clients" style={{ color: neonBlue }} className="hover:opacity-80">← {t('common.back')}</Link>
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-white mb-4">{t('clients.clientNotFound')}</h2>
+            <Link to="/clients" style={{ color: neonBlue }} className="hover:opacity-80">← {t('common.back')}</Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -314,234 +325,241 @@ export default function ClientDetail() {
   const otherClients = getOtherClients();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        <div>
-          <Link 
-            to="/clients" 
-            className="text-sm flex items-center gap-1 mb-2 hover:opacity-80 transition-opacity"
-            style={{ color: neonBlue }}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
-            </svg>
-            {t('clients.allClients')}
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              {client.status === 'running' ? (
-                <>
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: cyan }}></div>
-                  <div 
-                    className="absolute inset-0 w-4 h-4 rounded-full animate-ping opacity-75"
-                    style={{ backgroundColor: cyan }}
-                  ></div>
-                </>
-              ) : client.status === 'error' ? (
-                <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-              ) : (
-                <div className="w-4 h-4 bg-slate-500 rounded-full"></div>
-              )}
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {client.name} <span className="text-slate-400 font-normal">({client.profile_name})</span>
-              </h1>
-              <p className="text-slate-500">{client.slug} · Port {client.websocket_port}</p>
-            </div>
-            
-            {/* WebSocket Status Badge */}
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-800 rounded-lg border border-slate-700 ml-2">
-              <div className={`w-2 h-2 rounded-full ${getWsStatusColor()}`}></div>
-              <span className="text-xs text-slate-400">
-                {connectionState === 'connected' ? 'Live' : connectionState}
-              </span>
+    <div className="flex flex-col h-full">
+      {/* Header Section */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800/50">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <Link 
+              to="/clients" 
+              className="text-sm flex items-center gap-1 mb-2 hover:opacity-80 transition-opacity"
+              style={{ color: neonBlue }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+              </svg>
+              {t('clients.allClients')}
+            </Link>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                {client.status === 'running' ? (
+                  <>
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cyan }}></div>
+                    <div 
+                      className="absolute inset-0 w-3 h-3 rounded-full animate-ping opacity-75"
+                      style={{ backgroundColor: cyan }}
+                    ></div>
+                  </>
+                ) : client.status === 'error' ? (
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                ) : (
+                  <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
+                )}
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-white">
+                  {client.name} <span className="text-slate-400 font-normal text-base">({client.profile_name})</span>
+                </h1>
+                <p className="text-slate-500 text-sm">{client.slug} · Port {client.websocket_port}</p>
+              </div>
+              
+              {/* WebSocket Status Badge */}
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/50 rounded-lg border border-slate-700/50 ml-2">
+                <div className={`w-2 h-2 rounded-full ${getWsStatusColor()}`}></div>
+                <span className="text-xs text-slate-400">
+                  {connectionState === 'connected' ? 'Live' : connectionState}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2">
-          {client.status === 'running' ? (
-            <>
+          
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2">
+            {client.status === 'running' ? (
+              <>
+                <button 
+                  onClick={() => handleAction('stop')} 
+                  disabled={!!actionLoading}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-all"
+                  style={neonButtonStyle}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                  </svg>
+                  {t('clients.stop')}
+                </button>
+                <button 
+                  onClick={() => handleAction('restart')} 
+                  disabled={!!actionLoading}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-all"
+                  style={neonButtonStyle}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  {t('clients.restart')}
+                </button>
+              </>
+            ) : (
               <button 
-                onClick={() => handleAction('stop')} 
+                onClick={() => handleAction('start')} 
                 disabled={!!actionLoading}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-opacity"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-all"
                 style={neonButtonStyle}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
                 </svg>
-                {t('clients.stop')}
+                {t('clients.start')}
               </button>
-              <button 
-                onClick={() => handleAction('restart')} 
-                disabled={!!actionLoading}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-opacity"
-                style={neonButtonStyle}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                {t('clients.restart')}
-              </button>
-            </>
-          ) : (
+            )}
+            <Link 
+              to={`/clients/${id}/edit`}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 hover:opacity-90 transition-all"
+              style={neonButtonStyle}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              {t('common.edit')}
+            </Link>
             <button 
-              onClick={() => handleAction('start')} 
+              onClick={handleDelete} 
               disabled={!!actionLoading}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-opacity"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-all"
+              style={neonButtonStyle}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+              {t('common.delete')}
+            </button>
+
+            {/* Test Run Button */}
+            <button
+              onClick={() => setShowTestModal(true)}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 hover:opacity-90 transition-all"
               style={neonButtonStyle}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              {t('clients.start')}
+              Test
             </button>
-          )}
-          <Link 
-            to={`/clients/${id}/edit`}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 hover:opacity-90 transition-opacity"
-            style={neonButtonStyle}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-            </svg>
-            {t('common.edit')}
-          </Link>
-          <button 
-            onClick={handleDelete} 
-            disabled={!!actionLoading}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-opacity"
-            style={neonButtonStyle}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-            {t('common.delete')}
-          </button>
 
-          {/* Test Run Button */}
-          <button
-            onClick={() => setShowTestModal(true)}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 hover:opacity-90 transition-opacity"
-            style={neonButtonStyle}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Test
-          </button>
-
-          {/* Test History Button */}
-          <Link
-            to="/test-runs"
-            className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 hover:opacity-90 transition-opacity"
-            style={neonButtonStyle}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            History
-          </Link>
-          
-          {/* Reset Dropdown */}
-          <ResetButtons 
-            clientId={client.id} 
-            onResetComplete={handleResetComplete}
-          />
+            {/* Test History Button */}
+            <Link
+              to="/test-runs"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 hover:opacity-90 transition-all"
+              style={neonButtonStyle}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              History
+            </Link>
+            
+            {/* Reset Dropdown */}
+            <ResetButtons 
+              clientId={client.id} 
+              onResetComplete={handleResetComplete}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Error Display */}
-      {client.last_error && (
-        <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4 text-red-400">
-          <strong>{t('status.error')}:</strong> {client.last_error}
-        </div>
-      )}
-
-      {/* Stats Cards */}
-      <ClientStats client={client} connectionCount={connections.length} />
-
-      {/* Main Grid */}
-      <div className="grid gap-6 lg:grid-cols-3" style={{ alignItems: 'stretch' }}>
-        {/* Main Content */}
-        <div className="lg:col-span-2 flex flex-col space-y-6">
-          <ClientConnections 
-            client={client} 
-            connections={connections}
-            otherClients={otherClients}
-            onConnect={handleConnect}
-            onDelete={handleDeleteConnection}
-          />
-
-          {/* Container Logs */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <h2 className="text-lg font-semibold" style={{ color: neonBlue }}>{t('clients.containerLogs')}</h2>
-              <button 
-                onClick={fetchLogs} 
-                className="text-sm hover:opacity-80 transition-opacity"
-                style={{ color: neonBlue }}
-              >
-                {t('common.refresh')}
-              </button>
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-auto min-h-0 px-6 py-4">
+        <div className="space-y-6">
+          {/* Error Display */}
+          {client.last_error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400">
+              <strong>{t('status.error')}:</strong> {client.last_error}
             </div>
-            <div className="p-4 font-mono text-xs overflow-auto max-h-64 bg-slate-950">
-              {logs ? (
-                <pre className="whitespace-pre-wrap" style={{ color: '#22D3EE' }}>{logs}</pre>
-              ) : (
-                <p className="text-slate-500">{t('clients.noLogs')}</p>
-              )}
-              <div ref={logsEndRef} />
+          )}
+
+          {/* Stats Cards */}
+          <ClientStats client={client} connectionCount={connections.length} />
+
+          {/* Main Grid */}
+          <div className="grid gap-6 lg:grid-cols-3" style={{ alignItems: 'stretch' }}>
+            {/* Main Content */}
+            <div className="lg:col-span-2 flex flex-col space-y-6">
+              <ClientConnections 
+                client={client} 
+                connections={connections}
+                otherClients={otherClients}
+                onConnect={handleConnect}
+                onDelete={handleDeleteConnection}
+              />
+
+              {/* Container Logs */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-800/50 overflow-hidden">
+                <div className="p-4 border-b border-slate-800/50 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold" style={{ color: neonBlue }}>{t('clients.containerLogs')}</h2>
+                  <button 
+                    onClick={fetchLogs} 
+                    className="text-sm hover:opacity-80 transition-opacity"
+                    style={{ color: neonBlue }}
+                  >
+                    {t('common.refresh')}
+                  </button>
+                </div>
+                <div className="p-4 font-mono text-xs overflow-auto max-h-64 bg-slate-950/50">
+                  {logs ? (
+                    <pre className="whitespace-pre-wrap" style={{ color: '#22D3EE' }}>{logs}</pre>
+                  ) : (
+                    <p className="text-slate-500">{t('clients.noLogs')}</p>
+                  )}
+                  <div ref={logsEndRef} />
+                </div>
+              </div>
+
+              {/* Messages */}
+              <ClientMessages sentMessages={sentMessages} receivedMessages={receivedMessages} />
+            </div>
+            
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              <ClientSidebar 
+                client={client} 
+                connections={connections}
+                onSendMessage={handleSendMessage}
+              />
             </div>
           </div>
 
-          {/* Messages */}
-          <ClientMessages sentMessages={sentMessages} receivedMessages={receivedMessages} />
-        </div>
-        
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
-          <ClientSidebar 
-            client={client} 
-            connections={connections}
-            onSendMessage={handleSendMessage}
-          />
-        </div>
-      </div>
-
-      {/* Grafana Info */}
-      <div 
-        className="rounded-xl p-4 flex items-start space-x-3"
-        style={{ 
-          backgroundColor: 'rgba(136, 206, 208, 0.1)',
-          border: `1px solid rgba(136, 206, 208, 0.3)`
-        }}
-      >
-        <svg className="w-6 h-6 flex-shrink-0" style={{ color: neonBlue }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <div>
-          <p className="font-medium" style={{ color: neonBlue }}>{t('clients.grafanaDashboard')}</p>
-          <p className="text-sm" style={{ color: neonBlue, opacity: 0.8 }}>
-            {t('clients.grafanaInfo')}{' '}
-            <a 
-              href="http://localhost:3000" 
-              target="_blank" 
-              rel="noreferrer" 
-              className="underline hover:no-underline"
-              style={{ color: neonBlue }}
-            >
-              {t('clients.grafanaLink')}
-            </a>
-            {' '}{t('clients.grafanaVisualization')}
-          </p>
+          {/* Grafana Info */}
+          <div 
+            className="rounded-lg p-4 flex items-start space-x-3"
+            style={{ 
+              backgroundColor: 'rgba(136, 206, 208, 0.05)',
+              border: `1px solid rgba(136, 206, 208, 0.2)`
+            }}
+          >
+            <svg className="w-6 h-6 flex-shrink-0" style={{ color: neonBlue }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+              <p className="font-medium" style={{ color: neonBlue }}>{t('clients.grafanaDashboard')}</p>
+              <p className="text-sm" style={{ color: neonBlue, opacity: 0.8 }}>
+                {t('clients.grafanaInfo')}{' '}
+                <a 
+                  href="http://localhost:3000" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="underline hover:no-underline"
+                  style={{ color: neonBlue }}
+                >
+                  {t('clients.grafanaLink')}
+                </a>
+                {' '}{t('clients.grafanaVisualization')}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

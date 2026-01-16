@@ -244,339 +244,361 @@ export default function ClientForm() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-24">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: neonBlue }}></div>
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: neonBlue }}></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link to="/clients" className="text-slate-500 hover:text-slate-700 dark:hover:text-white text-sm inline-flex items-center gap-1 mb-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
-            </svg>
-            {t('clients.allClients', 'Alle Clients')}
-          </Link>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {isEdit ? t('clients.editClient', 'Client bearbeiten') : t('clients.newClient', 'Neuer Client')}
-          </h1>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/clients" className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium">
-            {t('common.cancel', 'Abbrechen')}
-          </Link>
-          <button
-            onClick={handleSubmit}
-            disabled={saving || (availablePorts.length === 0 && !isEdit)}
-            className="px-4 py-2 hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm font-medium flex items-center gap-2"
-            style={{ backgroundColor: neonBlue }}
-          >
-            {saving && (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+    <div className="flex flex-col h-full">
+      {/* Header Section */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <Link 
+              to="/clients" 
+              className="text-sm flex items-center gap-1 mb-2 hover:opacity-80 transition-opacity"
+              style={{ color: neonBlue }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
               </svg>
-            )}
-            {isEdit ? t('common.save', 'Speichern') : t('clients.createClient', 'Client erstellen')}
-          </button>
+              {t('clients.allClients', 'Alle Clients')}
+            </Link>
+            <h1 className="text-xl font-semibold text-white">
+              {isEdit ? t('clients.editClient', 'Client bearbeiten') : t('clients.newClient', 'Neuer Client')}
+            </h1>
+          </div>
+          <div className="flex gap-2">
+            <Link 
+              to="/clients" 
+              className="px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-700/50"
+            >
+              {t('common.cancel', 'Abbrechen')}
+            </Link>
+            <button
+              onClick={handleSubmit}
+              disabled={saving || (availablePorts.length === 0 && !isEdit)}
+              className="px-4 py-2 hover:opacity-90 disabled:opacity-50 text-slate-900 rounded-lg text-sm font-medium flex items-center gap-2 transition-all"
+              style={{ backgroundColor: neonBlue }}
+            >
+              {saving && (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              )}
+              {isEdit ? t('common.save', 'Speichern') : t('clients.createClient', 'Client erstellen')}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Info Banner */}
-      {!isEdit && (
-        <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-4 flex items-start gap-3">
-          <svg className="w-6 h-6 flex-shrink-0" style={{ color: neonBlue }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-          <div>
-            <p className="font-medium" style={{ color: neonBlue }}>{t('clients.autoGeneration', 'Automatische Generierung')}</p>
-            <p className="text-sm text-cyan-700 dark:text-cyan-400 mt-1">
-              {t('clients.autoGenerationInfo', 'Name, Slug und Profil werden automatisch generiert.')}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Port Warning */}
-      {availablePorts.length === 0 && !isEdit && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
-          <svg className="w-6 h-6 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-          </svg>
-          <div>
-            <p className="font-medium text-red-900 dark:text-red-300">{t('clients.noPortsAvailable', 'Keine Ports verfügbar')}</p>
-            <p className="text-sm text-red-700 dark:text-red-400 mt-1">{t('clients.deleteClientFirst', 'Alle Ports (3031-3080) sind belegt.')}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Two Column Layout */}
-      <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column - Main Settings */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Docker Configuration */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Docker Konfiguration</h2>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">WebSocket Port *</label>
-              <select
-                value={formData.websocket_port}
-                onChange={e => setFormData(prev => ({ ...prev, websocket_port: parseInt(e.target.value) }))}
-                required
-                disabled={availablePorts.length === 0 && !isEdit}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 disabled:opacity-50"
-              >
-                {availablePorts.length === 0 ? (
-                  <option value="">Keine Ports verfügbar</option>
-                ) : (
-                  availablePorts.map(port => (
-                    <option key={port} value={port}>Port {port}</option>
-                  ))
-                )}
-              </select>
-              <p className="text-xs text-slate-500 mt-1">{availablePorts.length} Port{availablePorts.length !== 1 ? 's' : ''} verfügbar (3031-3080)</p>
-            </div>
-          </div>
-
-          {/* Connection Mode */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-              {t('clients.connectionMode', 'Verbindungsmodus')}
-            </h2>
-            
-            {/* Connection Mode Grid */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {connectionModeOptions.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleConnectionModeChange(option.value as ConnectionMode)}
-                  className={`p-4 rounded-lg border-2 text-left transition-all ${
-                    formData.connection_mode === option.value
-                      ? 'border-cyan-500 bg-cyan-900/20'
-                      : 'border-slate-700 hover:border-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">{option.icon}</span>
-                    <span className={`font-medium ${
-                      formData.connection_mode === option.value
-                        ? 'text-cyan-300'
-                        : 'text-slate-300'
-                    }`}>
-                      {option.label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500">{option.description}</p>
-                </button>
-              ))}
-            </div>
-
-            {/* ChutneX Network Selection */}
-            {needsChutneX && (
-              <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  🔬 ChutneX Netzwerk *
-                </label>
-                
-                {runningNetworks.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-amber-600 dark:text-amber-400 mb-2">
-                      ⚠️ {t('clients.noChutneXNetworks', 'Kein ChutneX Netzwerk läuft')}
-                    </p>
-                    <Link 
-                      to="/chutney" 
-                      className="text-sm hover:opacity-80"
-                      style={{ color: neonBlue }}
-                    >
-                      → {t('clients.createChutneXNetwork', 'ChutneX Netzwerk erstellen')}
-                    </Link>
-                  </div>
-                ) : (
-                  <select
-                    value={formData.chutnex_network || ''}
-                    onChange={e => setFormData(prev => ({ 
-                      ...prev, 
-                      chutnex_network: e.target.value || null,
-                      chutnex_socks_port: null // Reset SOCKS port when network changes
-                    }))}
-                    required={needsChutneX}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
-                  >
-                    <option value="">{t('clients.selectNetwork', '-- Netzwerk wählen --')}</option>
-                    {runningNetworks.map(network => (
-                      <option key={network.id} value={network.id}>
-                        {network.name} ({network.num_clients} Clients)
-                      </option>
-                    ))}
-                  </select>
-                )}
-
-                {/* SOCKS Port Selection (nur für external) */}
-                {needsSocksPort && formData.chutnex_network && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      🔗 SOCKS Port *
-                    </label>
-                    <select
-                      value={formData.chutnex_socks_port || ''}
-                      onChange={e => setFormData(prev => ({ 
-                        ...prev, 
-                        chutnex_socks_port: e.target.value ? parseInt(e.target.value) : null 
-                      }))}
-                      required={needsSocksPort}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
-                    >
-                      <option value="">{t('clients.selectSocksPort', '-- SOCKS Port wählen --')}</option>
-                      {getAvailableSocksPorts().map(port => (
-                        <option key={port} value={port}>
-                          Port {port}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {t('clients.socksPortInfo', 'SOCKS Proxy vom ChutneX Client Node')}
-                    </p>
-                  </div>
-                )}
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-auto min-h-0 px-6 py-4">
+        <div className="space-y-6">
+          {/* Info Banner */}
+          {!isEdit && (
+            <div 
+              className="rounded-lg p-4 flex items-start gap-3"
+              style={{ 
+                backgroundColor: 'rgba(136, 206, 208, 0.05)',
+                border: '1px solid rgba(136, 206, 208, 0.2)'
+              }}
+            >
+              <svg className="w-6 h-6 flex-shrink-0" style={{ color: neonBlue }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              <div>
+                <p className="font-medium" style={{ color: neonBlue }}>{t('clients.autoGeneration', 'Automatische Generierung')}</p>
+                <p className="text-sm mt-1" style={{ color: neonBlue, opacity: 0.7 }}>
+                  {t('clients.autoGenerationInfo', 'Name, Slug und Profil werden automatisch generiert.')}
+                </p>
               </div>
-            )}
-
-            {/* Connection Mode Info */}
-            <div className="mt-4 text-sm text-slate-500">
-              {formData.connection_mode === 'direct' && (
-                <p>🌐 {t('clients.directInfo', 'Direkte Verbindung ohne Tor - nur für LAN-Server')}</p>
-              )}
-              {formData.connection_mode === 'public_tor' && (
-                <p>🧅 {t('clients.publicTorInfo', 'Verbindung über öffentliches Tor (localhost:9050)')}</p>
-              )}
-              {formData.connection_mode === 'chutnex_internal' && (
-                <p>🔬 {t('clients.chutnexInternalInfo', 'Client läuft IM ChutneX Netzwerk - für Forensik')}</p>
-              )}
-              {formData.connection_mode === 'chutnex_external' && (
-                <p>🔗 {t('clients.chutnexExternalInfo', 'Client verbindet sich ÜBER ChutneX SOCKS - simuliert externen Zugriff')}</p>
-              )}
             </div>
-          </div>
+          )}
 
-          {/* Description */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">{t('common.description', 'Beschreibung')}</h2>
-            <textarea
-              value={formData.description}
-              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              placeholder={t('clients.descriptionPlaceholder', 'Optionale Notizen zu diesem Client...')}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
-            />
-          </div>
-        </div>
-
-        {/* Right Column - Server Selection */}
-        <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 h-full flex flex-col">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                SMP Server
-                {formData.smp_server_ids.length > 0 && (
-                  <span className="ml-2 text-sm font-normal" style={{ color: neonBlue }}>
-                    ({formData.smp_server_ids.length} {t('common.selected', 'ausgewählt')})
-                  </span>
-                )}
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">{t('clients.serverInfo', 'Client nutzt diese Server für Nachrichten')}</p>
+          {/* Port Warning */}
+          {availablePorts.length === 0 && !isEdit && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
+              <svg className="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              <div>
+                <p className="font-medium text-red-300">{t('clients.noPortsAvailable', 'Keine Ports verfügbar')}</p>
+                <p className="text-sm text-red-400/80 mt-1">{t('clients.deleteClientFirst', 'Alle Ports (3031-3080) sind belegt.')}</p>
+              </div>
             </div>
-            
-            <div className="p-4 flex-1 overflow-y-auto">
-              {servers.length === 0 ? (
-                <div className="text-center py-8">
-                  <svg className="w-12 h-12 mx-auto text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
-                  </svg>
-                  <p className="text-slate-500 mb-2">{t('clients.noServers', 'Keine SMP Server')}</p>
-                  <Link to="/servers/new" style={{ color: neonBlue }} className="text-sm hover:opacity-80">
-                    + {t('servers.addServer', 'Server hinzufügen')}
-                  </Link>
+          )}
+
+          {/* Two Column Layout */}
+          <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3">
+            {/* Left Column - Main Settings */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Docker Configuration */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-800/50 p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">Docker Konfiguration</h2>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">WebSocket Port *</label>
+                  <select
+                    value={formData.websocket_port}
+                    onChange={e => setFormData(prev => ({ ...prev, websocket_port: parseInt(e.target.value) }))}
+                    required
+                    disabled={availablePorts.length === 0 && !isEdit}
+                    className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2.5 text-white focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 focus:outline-none disabled:opacity-50 transition-colors"
+                  >
+                    {availablePorts.length === 0 ? (
+                      <option value="">Keine Ports verfügbar</option>
+                    ) : (
+                      availablePorts.map(port => (
+                        <option key={port} value={port}>Port {port}</option>
+                      ))
+                    )}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">{availablePorts.length} Port{availablePorts.length !== 1 ? 's' : ''} verfügbar (3031-3080)</p>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {servers.map(server => {
-                    // Server-Kompatibilität prüfen
-                    const isCompatible = isServerCompatible(server);
-                    const isSelected = formData.smp_server_ids.includes(server.id);
+              </div>
+
+              {/* Connection Mode */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-800/50 p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">
+                  {t('clients.connectionMode', 'Verbindungsmodus')}
+                </h2>
+                
+                {/* Connection Mode Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {connectionModeOptions.map(option => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleConnectionModeChange(option.value as ConnectionMode)}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        formData.connection_mode === option.value
+                          ? 'border-cyan-500/50 bg-cyan-900/20'
+                          : 'border-slate-700/50 hover:border-slate-600/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xl">{option.icon}</span>
+                        <span className={`font-medium ${
+                          formData.connection_mode === option.value
+                            ? 'text-cyan-300'
+                            : 'text-slate-300'
+                        }`}>
+                          {option.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500">{option.description}</p>
+                    </button>
+                  ))}
+                </div>
+
+                {/* ChutneX Network Selection */}
+                {needsChutneX && (
+                  <div className="mt-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      🔬 ChutneX Netzwerk *
+                    </label>
                     
-                    return (
-                      <label
-                        key={server.id}
-                        className={`flex items-center p-3 rounded-lg border transition-all ${
-                          !isCompatible 
-                            ? 'opacity-40 cursor-not-allowed border-slate-200 dark:border-slate-700'
-                            : isSelected
-                              ? 'cursor-pointer border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                              : 'cursor-pointer border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                        }`}
+                    {runningNetworks.length === 0 ? (
+                      <div className="text-center py-4">
+                        <p className="text-amber-400 mb-2">
+                          ⚠️ {t('clients.noChutneXNetworks', 'Kein ChutneX Netzwerk läuft')}
+                        </p>
+                        <Link 
+                          to="/chutney" 
+                          className="text-sm hover:opacity-80"
+                          style={{ color: neonBlue }}
+                        >
+                          → {t('clients.createChutneXNetwork', 'ChutneX Netzwerk erstellen')}
+                        </Link>
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.chutnex_network || ''}
+                        onChange={e => setFormData(prev => ({ 
+                          ...prev, 
+                          chutnex_network: e.target.value || null,
+                          chutnex_socks_port: null // Reset SOCKS port when network changes
+                        }))}
+                        required={needsChutneX}
+                        className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2.5 text-white focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 focus:outline-none transition-colors"
                       >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => isCompatible && handleServerToggle(server.id)}
-                          disabled={!isCompatible}
-                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-cyan-600 focus:ring-cyan-500 disabled:opacity-50"
-                        />
-                        <div className="ml-3 flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                              server.is_active ? 'bg-emerald-500' : 'bg-slate-400'
-                            }`}></span>
-                            <span className={`font-medium text-sm truncate ${
-                              isCompatible ? 'text-slate-900 dark:text-white' : 'text-slate-500'
-                            }`}>
-                              {server.name}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-500 truncate">{server.host}</p>
-                          {!isCompatible && (
-                            <p className="text-xs text-amber-500 mt-1">
-                              {getIncompatibilityReason(server)}
-                            </p>
-                          )}
-                        </div>
-                        {/* Hosting Mode Badge */}
-                        <div className="flex gap-1 flex-shrink-0">
-                          {server.hosting_mode === 'chutnex' && (
-                            <span className="text-xs text-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 px-1.5 py-0.5 rounded">
-                              🔬
-                            </span>
-                          )}
-                          {server.is_onion && (
-                            <span className="text-xs text-purple-500 bg-purple-100 dark:bg-purple-900/30 px-1.5 py-0.5 rounded">
-                              TOR
-                            </span>
-                          )}
-                          {server.is_docker_hosted && server.hosting_mode === 'ip' && (
-                            <span className="text-xs text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                              LAN
-                            </span>
-                          )}
-                          {!server.is_docker_hosted && (
-                            <span className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                              EXT
-                            </span>
-                          )}
-                        </div>
-                      </label>
-                    );
-                  })}
+                        <option value="">{t('clients.selectNetwork', '-- Netzwerk wählen --')}</option>
+                        {runningNetworks.map(network => (
+                          <option key={network.id} value={network.id}>
+                            {network.name} ({network.num_clients} Clients)
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    {/* SOCKS Port Selection (nur für external) */}
+                    {needsSocksPort && formData.chutnex_network && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          🔗 SOCKS Port *
+                        </label>
+                        <select
+                          value={formData.chutnex_socks_port || ''}
+                          onChange={e => setFormData(prev => ({ 
+                            ...prev, 
+                            chutnex_socks_port: e.target.value ? parseInt(e.target.value) : null 
+                          }))}
+                          required={needsSocksPort}
+                          className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2.5 text-white focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 focus:outline-none transition-colors"
+                        >
+                          <option value="">{t('clients.selectSocksPort', '-- SOCKS Port wählen --')}</option>
+                          {getAvailableSocksPorts().map(port => (
+                            <option key={port} value={port}>
+                              Port {port}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {t('clients.socksPortInfo', 'SOCKS Proxy vom ChutneX Client Node')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Connection Mode Info */}
+                <div className="mt-4 text-sm text-slate-500">
+                  {formData.connection_mode === 'direct' && (
+                    <p>🌐 {t('clients.directInfo', 'Direkte Verbindung ohne Tor - nur für LAN-Server')}</p>
+                  )}
+                  {formData.connection_mode === 'public_tor' && (
+                    <p>🧅 {t('clients.publicTorInfo', 'Verbindung über öffentliches Tor (localhost:9050)')}</p>
+                  )}
+                  {formData.connection_mode === 'chutnex_internal' && (
+                    <p>🔬 {t('clients.chutnexInternalInfo', 'Client läuft IM ChutneX Netzwerk - für Forensik')}</p>
+                  )}
+                  {formData.connection_mode === 'chutnex_external' && (
+                    <p>🔗 {t('clients.chutnexExternalInfo', 'Client verbindet sich ÜBER ChutneX SOCKS - simuliert externen Zugriff')}</p>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Description */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-800/50 p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">{t('common.description', 'Beschreibung')}</h2>
+                <textarea
+                  value={formData.description}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                  placeholder={t('clients.descriptionPlaceholder', 'Optionale Notizen zu diesem Client...')}
+                  className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 focus:outline-none transition-colors"
+                />
+              </div>
             </div>
-          </div>
+
+            {/* Right Column - Server Selection */}
+            <div className="lg:col-span-1">
+              <div className="bg-slate-900/50 rounded-lg border border-slate-800/50 h-full flex flex-col">
+                <div className="p-4 border-b border-slate-800/50">
+                  <h2 className="text-lg font-semibold text-white">
+                    SMP Server
+                    {formData.smp_server_ids.length > 0 && (
+                      <span className="ml-2 text-sm font-normal" style={{ color: neonBlue }}>
+                        ({formData.smp_server_ids.length} {t('common.selected', 'ausgewählt')})
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">{t('clients.serverInfo', 'Client nutzt diese Server für Nachrichten')}</p>
+                </div>
+                
+                <div className="p-4 flex-1 overflow-y-auto">
+                  {servers.length === 0 ? (
+                    <div className="text-center py-8">
+                      <svg className="w-12 h-12 mx-auto text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                      </svg>
+                      <p className="text-slate-500 mb-2">{t('clients.noServers', 'Keine SMP Server')}</p>
+                      <Link to="/servers/new" style={{ color: neonBlue }} className="text-sm hover:opacity-80">
+                        + {t('servers.addServer', 'Server hinzufügen')}
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {servers.map(server => {
+                        // Server-Kompatibilität prüfen
+                        const isCompatible = isServerCompatible(server);
+                        const isSelected = formData.smp_server_ids.includes(server.id);
+                        
+                        return (
+                          <label
+                            key={server.id}
+                            className={`flex items-center p-3 rounded-lg border transition-all ${
+                              !isCompatible 
+                                ? 'opacity-40 cursor-not-allowed border-slate-700/50'
+                                : isSelected
+                                  ? 'cursor-pointer border-cyan-500/50 bg-cyan-900/20'
+                                  : 'cursor-pointer border-slate-700/50 hover:border-slate-600/50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => isCompatible && handleServerToggle(server.id)}
+                              disabled={!isCompatible}
+                              className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-cyan-600 focus:ring-cyan-500 disabled:opacity-50"
+                            />
+                            <div className="ml-3 flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                  server.is_active ? 'bg-emerald-500' : 'bg-slate-500'
+                                }`}></span>
+                                <span className={`font-medium text-sm truncate ${
+                                  isCompatible ? 'text-white' : 'text-slate-500'
+                                }`}>
+                                  {server.name}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 truncate">{server.host}</p>
+                              {!isCompatible && (
+                                <p className="text-xs text-amber-400 mt-1">
+                                  {getIncompatibilityReason(server)}
+                                </p>
+                              )}
+                            </div>
+                            {/* Hosting Mode Badge */}
+                            <div className="flex gap-1 flex-shrink-0">
+                              {server.hosting_mode === 'chutnex' && (
+                                <span className="text-xs text-cyan-400 bg-cyan-900/30 px-1.5 py-0.5 rounded">
+                                  🔬
+                                </span>
+                              )}
+                              {server.is_onion && (
+                                <span className="text-xs text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">
+                                  TOR
+                                </span>
+                              )}
+                              {server.is_docker_hosted && server.hosting_mode === 'ip' && (
+                                <span className="text-xs text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                                  LAN
+                                </span>
+                              )}
+                              {!server.is_docker_hosted && (
+                                <span className="text-xs text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded">
+                                  EXT
+                                </span>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
