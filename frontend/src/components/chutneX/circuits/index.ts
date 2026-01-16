@@ -1,9 +1,10 @@
 /**
- * ChutneX Circuits Components - Exports
+ * ChutneX Circuits Components
+ * ===========================
+ * Pure UI components for circuit display
  */
-export { CircuitsList } from './CircuitsList';
 export { CircuitCard } from './CircuitCard';
-export { CircuitPathViz, CircuitPathDetailed } from './CircuitPathViz';
-export { CircuitStats } from './CircuitStats';
+export type { CircuitData, CircuitHop } from './CircuitCard';
+export { CircuitRow } from './CircuitRow';
 export { CircuitFilters } from './CircuitFilters';
-export { CircuitEventLog } from './CircuitEventLog';
+export { CircuitStats } from './CircuitStats';

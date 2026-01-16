@@ -1,87 +1,130 @@
 /**
- * CircuitFilters - Filter Controls for Circuits
+ * CircuitFilters - Filter Controls for Circuit List
+ * ==================================================
+ * Pure UI component - receives filter state via props
  */
 import React from 'react';
-import { Filter, SortAsc } from 'lucide-react';
+import { Search, X } from 'lucide-react';
+
+const NEON = '#88CED0';
 
 interface CircuitFiltersProps {
-  statuses: string[];
-  purposes: string[];
-  filterStatus: string;
-  filterPurpose: string;
-  sortBy: string;
+  searchQuery: string;
+  statusFilter: string;
+  purposeFilter: string;
+  availableStatuses: string[];
+  availablePurposes: string[];
+  onSearchChange: (query: string) => void;
   onStatusChange: (status: string) => void;
   onPurposeChange: (purpose: string) => void;
-  onSortChange: (sort: string) => void;
+  onClearFilters: () => void;
   totalCount: number;
   filteredCount: number;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  BUILT: 'Built',
+  LAUNCHED: 'Launched',
+  EXTENDED: 'Extended',
+  FAILED: 'Failed',
+  CLOSED: 'Closed',
+};
+
+const PURPOSE_LABELS: Record<string, string> = {
+  GENERAL: 'General',
+  HS_CLIENT_INTRO: 'HS Intro',
+  HS_CLIENT_REND: 'HS Rend',
+  HS_SERVICE_INTRO: 'Svc Intro',
+  HS_SERVICE_REND: 'Svc Rend',
+  TESTING: 'Test',
+  CONTROLLER: 'Ctrl',
+  CONFLUX_LINKED: 'Conflux',
+  HS_VANGUARDS: 'Vanguard',
+};
+
 export const CircuitFilters: React.FC<CircuitFiltersProps> = ({
-  statuses,
-  purposes,
-  filterStatus,
-  filterPurpose,
-  sortBy,
+  searchQuery,
+  statusFilter,
+  purposeFilter,
+  availableStatuses,
+  availablePurposes,
+  onSearchChange,
   onStatusChange,
   onPurposeChange,
-  onSortChange,
+  onClearFilters,
   totalCount,
   filteredCount,
 }) => {
+  const hasActiveFilters = searchQuery || statusFilter !== 'all' || purposeFilter !== 'all';
+
   return (
-    <div className="flex flex-wrap items-center gap-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-      {/* Filter Icon */}
-      <div className="flex items-center gap-2 text-gray-400">
-        <Filter size={16} />
-        <span className="text-sm">Filters</span>
+    <div className="flex flex-wrap items-center gap-4 bg-gray-800/30 rounded-lg border border-gray-700/50 px-4 py-3">
+      {/* Search */}
+      <div className="flex items-center gap-2 bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-1.5 flex-1 max-w-xs">
+        <Search size={14} style={{ color: NEON }} />
+        <input
+          type="text"
+          placeholder="Search circuits..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="bg-transparent text-sm text-white border-none outline-none w-full placeholder-gray-500"
+        />
+        {searchQuery && (
+          <button onClick={() => onSearchChange('')} className="p-0.5 hover:bg-gray-700 rounded">
+            <X size={12} className="text-gray-500" />
+          </button>
+        )}
       </div>
 
       {/* Status Filter */}
-      <select
-        value={filterStatus}
-        onChange={(e) => onStatusChange(e.target.value)}
-        className="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:border-[#88CED0] focus:outline-none"
-      >
-        <option value="all">All Status</option>
-        {statuses.map(status => (
-          <option key={status} value={status}>
-            {status.replace('CircStatus.', '')}
-          </option>
-        ))}
-      </select>
-
-      {/* Purpose Filter */}
-      <select
-        value={filterPurpose}
-        onChange={(e) => onPurposeChange(e.target.value)}
-        className="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:border-[#88CED0] focus:outline-none"
-      >
-        <option value="all">All Purposes</option>
-        {purposes.map(purpose => (
-          <option key={purpose} value={purpose}>{purpose}</option>
-        ))}
-      </select>
-
-      {/* Sort */}
-      <div className="flex items-center gap-2 ml-auto">
-        <SortAsc size={16} className="text-gray-400" />
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-500">Status:</span>
         <select
-          value={sortBy}
-          onChange={(e) => onSortChange(e.target.value)}
-          className="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:border-[#88CED0] focus:outline-none"
+          value={statusFilter}
+          onChange={(e) => onStatusChange(e.target.value)}
+          className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white cursor-pointer outline-none focus:border-[#88CED0]/50"
         >
-          <option value="id">Sort by ID</option>
-          <option value="status">Sort by Status</option>
-          <option value="purpose">Sort by Purpose</option>
-          <option value="path_length">Sort by Path Length</option>
+          <option value="all">All</option>
+          {availableStatuses.map((status) => (
+            <option key={status} value={status}>
+              {STATUS_LABELS[status] || status}
+            </option>
+          ))}
         </select>
       </div>
 
+      {/* Purpose Filter */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-500">Purpose:</span>
+        <select
+          value={purposeFilter}
+          onChange={(e) => onPurposeChange(e.target.value)}
+          className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white cursor-pointer outline-none focus:border-[#88CED0]/50"
+        >
+          <option value="all">All</option>
+          {availablePurposes.map((purpose) => (
+            <option key={purpose} value={purpose}>
+              {PURPOSE_LABELS[purpose] || purpose}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Clear Filters */}
+      {hasActiveFilters && (
+        <button
+          onClick={onClearFilters}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-700/50"
+          style={{ color: NEON }}
+        >
+          <X size={12} />
+          Clear
+        </button>
+      )}
+
       {/* Count */}
-      <div className="text-sm text-gray-400">
-        Showing <span className="text-[#88CED0] font-mono">{filteredCount}</span> of{' '}
-        <span className="font-mono">{totalCount}</span>
+      <div className="ml-auto text-sm text-gray-400">
+        Showing <span style={{ color: NEON }}>{filteredCount}</span> of {totalCount}
       </div>
     </div>
   );

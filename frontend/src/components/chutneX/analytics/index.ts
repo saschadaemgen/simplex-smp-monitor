@@ -1,6 +1,7 @@
 /**
- * ChutneX Analytics Components - Exports
+ * ChutneX Analytics Components
+ * ============================
+ * Pure UI components for the Analytics Dashboard
  */
-export { AnalyticsDashboard } from './AnalyticsDashboard';
 export { AnalyticsHeader } from './AnalyticsHeader';
 export { AnalyticsTabs } from './AnalyticsTabs';
