@@ -882,73 +882,77 @@ export default function Music() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex-shrink-0">
-          <h1 className="text-2xl font-bold" style={{ color: neonBlue }}>{t('music.title')}</h1>
-          <p className="text-slate-500 text-sm mt-1">{tracks.length} {t('music.tracks')} · {playlists.length + systemPlaylists.length} {t('music.playlists')}</p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap justify-end">
-          {activeTab === 'search' && searchResults.length > 0 && (
-            <>
-              <span className="text-xs text-slate-500 whitespace-nowrap">{t('music.page')} {currentPage}/{totalPages}</span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-2 py-1.5 rounded-lg text-sm transition-all hover:opacity-90 disabled:opacity-30" style={neonButtonStyle}><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
-                {getPageNumbers().map((pageNum) => <button key={pageNum} onClick={() => setCurrentPage(pageNum)} className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all" style={currentPage === pageNum ? neonButtonStyle : { color: '#64748b', backgroundColor: 'transparent', border: '1px solid transparent' }}>{pageNum}</button>)}
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="px-2 py-1.5 rounded-lg text-sm transition-all hover:opacity-90 disabled:opacity-30" style={neonButtonStyle}><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800/50">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-shrink-0">
+            <h1 className="text-2xl font-bold" style={{ color: neonBlue }}>{t('music.title')}</h1>
+            <p className="text-slate-500 text-sm mt-1">{tracks.length} {t('music.tracks')} · {playlists.length + systemPlaylists.length} {t('music.playlists')}</p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            {activeTab === 'search' && searchResults.length > 0 && (
+              <>
+                <span className="text-xs text-slate-500 whitespace-nowrap">{t('music.page')} {currentPage}/{totalPages}</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-2 py-1.5 rounded-lg text-sm transition-all hover:opacity-90 disabled:opacity-30" style={neonButtonStyle}><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+                  {getPageNumbers().map((pageNum) => <button key={pageNum} onClick={() => setCurrentPage(pageNum)} className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all" style={currentPage === pageNum ? neonButtonStyle : { color: '#64748b', backgroundColor: 'transparent', border: '1px solid transparent' }}>{pageNum}</button>)}
+                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="px-2 py-1.5 rounded-lg text-sm transition-all hover:opacity-90 disabled:opacity-30" style={neonButtonStyle}><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder={t('music.searchPlaceholder')} className="w-48 lg:w-64 px-4 py-1.5 pl-9 rounded-lg text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50" style={neonInputStyle} />
+                <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: neonBlue }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               </div>
-            </>
-          )}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder={t('music.searchPlaceholder')} className="w-48 lg:w-64 px-4 py-1.5 pl-9 rounded-lg text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50" style={neonInputStyle} />
-              <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: neonBlue }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <button onClick={handleSearch} disabled={isSearching || !searchQuery.trim()} className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-90 disabled:opacity-50" style={neonButtonStyle}>
+                {isSearching ? <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: cyan, animationDelay: '0ms' }} /><span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: cyan, animationDelay: '150ms' }} /><span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: cyan, animationDelay: '300ms' }} /></span> : t('music.search')}
+              </button>
             </div>
-            <button onClick={handleSearch} disabled={isSearching || !searchQuery.trim()} className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-90 disabled:opacity-50" style={neonButtonStyle}>
-              {isSearching ? <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: cyan, animationDelay: '0ms' }} /><span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: cyan, animationDelay: '150ms' }} /><span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: cyan, animationDelay: '300ms' }} /></span> : t('music.search')}
-            </button>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-800 mb-4 overflow-x-auto">
-        {/* Left Tabs */}
-        <div className="flex gap-1">
-          {['library', 'search', 'playlists'].map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-3 px-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === tab ? '' : 'text-slate-500 hover:text-white'}`} style={{ color: activeTab === tab ? neonBlue : undefined }}>
-              {tab === 'library' && t('music.library')}
-              {tab === 'search' && <>{t('music.searchResults')}{searchResults.length > 0 && <span className="ml-2 px-1.5 py-0.5 text-xs rounded-full" style={{ backgroundColor: neonBlue, color: '#0f172a' }}>{searchResults.length}</span>}</>}
-              {tab === 'playlists' && t('music.playlists')}
-              {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ backgroundColor: neonBlue }} />}
-            </button>
-          ))}
-          {pinnedPlaylists.map((playlist) => (
-            <button key={`tab-${playlist.id}`} onClick={() => setActiveTab(`playlist-${playlist.id}`)} className={`pb-3 px-3 text-sm font-medium transition-colors relative whitespace-nowrap flex items-center gap-1.5 ${activeTab === `playlist-${playlist.id}` ? '' : 'text-slate-500 hover:text-white'}`} style={{ color: activeTab === `playlist-${playlist.id}` ? neonBlue : undefined }}>
-              <span style={{ color: neonBlue }}><IconPin filled /></span>{playlist.name}
-              {activeTab === `playlist-${playlist.id}` && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ backgroundColor: neonBlue }} />}
-            </button>
-          ))}
-        </div>
-        
-        {/* Right Tabs - System Playlists */}
-        <div className="flex gap-1">
-          {systemPlaylists.map((playlist) => (
-            <button 
-              key={`system-tab-${playlist.system_key}`} 
-              onClick={() => setActiveTab(`system-${playlist.system_key}`)} 
-              className={`pb-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap flex items-center gap-2 ${activeTab === `system-${playlist.system_key}` ? '' : 'text-slate-500 hover:text-white'}`} 
-              style={{ color: activeTab === `system-${playlist.system_key}` ? neonBlue : undefined }}
-            >
-              {getSystemIcon(playlist.system_key)}
-              {getSystemDisplayName(playlist, t)}
-              {activeTab === `system-${playlist.system_key}` && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ backgroundColor: neonBlue }} />}
-            </button>
-          ))}
+      <div className="flex-shrink-0 px-6 border-b border-slate-800">
+        <div className="flex items-center justify-between overflow-x-auto">
+          {/* Left Tabs */}
+          <div className="flex gap-1">
+            {['library', 'search', 'playlists'].map((tab) => (
+              <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-3 px-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === tab ? '' : 'text-slate-500 hover:text-white'}`} style={{ color: activeTab === tab ? neonBlue : undefined }}>
+                {tab === 'library' && t('music.library')}
+                {tab === 'search' && <>{t('music.searchResults')}{searchResults.length > 0 && <span className="ml-2 px-1.5 py-0.5 text-xs rounded-full" style={{ backgroundColor: neonBlue, color: '#0f172a' }}>{searchResults.length}</span>}</>}
+                {tab === 'playlists' && t('music.playlists')}
+                {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ backgroundColor: neonBlue }} />}
+              </button>
+            ))}
+            {pinnedPlaylists.map((playlist) => (
+              <button key={`tab-${playlist.id}`} onClick={() => setActiveTab(`playlist-${playlist.id}`)} className={`pb-3 px-3 text-sm font-medium transition-colors relative whitespace-nowrap flex items-center gap-1.5 ${activeTab === `playlist-${playlist.id}` ? '' : 'text-slate-500 hover:text-white'}`} style={{ color: activeTab === `playlist-${playlist.id}` ? neonBlue : undefined }}>
+                <span style={{ color: neonBlue }}><IconPin filled /></span>{playlist.name}
+                {activeTab === `playlist-${playlist.id}` && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ backgroundColor: neonBlue }} />}
+              </button>
+            ))}
+          </div>
+          
+          {/* Right Tabs - System Playlists */}
+          <div className="flex gap-1">
+            {systemPlaylists.map((playlist) => (
+              <button 
+                key={`system-tab-${playlist.system_key}`} 
+                onClick={() => setActiveTab(`system-${playlist.system_key}`)} 
+                className={`pb-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap flex items-center gap-2 ${activeTab === `system-${playlist.system_key}` ? '' : 'text-slate-500 hover:text-white'}`} 
+                style={{ color: activeTab === `system-${playlist.system_key}` ? neonBlue : undefined }}
+              >
+                {getSystemIcon(playlist.system_key)}
+                {getSystemDisplayName(playlist, t)}
+                {activeTab === `system-${playlist.system_key}` && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ backgroundColor: neonBlue }} />}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto min-h-0">
+      <div className="flex-1 overflow-auto min-h-0 px-6 py-4">
         {activeTab === 'library' && (
           <div className="space-y-2">
             {isLoading ? <div className="flex items-center justify-center py-12"><svg className="w-8 h-8 animate-spin" style={{ color: neonBlue }} fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg></div> : tracks.length === 0 ? <div className="text-center py-12 text-slate-500"><svg className="w-16 h-16 mx-auto mb-4 opacity-50" style={{ color: neonBlue }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg><p className="text-lg mb-2">{t('music.noTracks')}</p><p className="text-sm">{t('music.noTracksHint')}</p></div> : tracks.map((track, index) => renderTrackRow(track, index, tracks))}

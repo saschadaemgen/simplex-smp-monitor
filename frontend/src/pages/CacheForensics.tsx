@@ -1109,7 +1109,7 @@ export default function CacheForensics() {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f172a' }}>
+      <div className="flex flex-col h-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <IconSpinner />
           <span className="text-slate-500">Loading Cache Forensics...</span>
@@ -1119,15 +1119,15 @@ export default function CacheForensics() {
   }
   
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: '#0f172a' }}>
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="mb-6">
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800/50">
         <h1 className="text-2xl font-bold" style={{ color: neonBlue }}>🗄️ Cache Forensics</h1>
         <p className="text-slate-500 mt-1">Download history, bandwidth analysis, and latency correlation</p>
       </div>
       
       {/* Tabs */}
-      <div className="mb-6 border-b border-slate-800">
+      <div className="flex-shrink-0 px-6 border-b border-slate-800">
         <div className="flex gap-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
@@ -1152,7 +1152,7 @@ export default function CacheForensics() {
       </div>
       
       {/* Tab Content */}
-      <div>
+      <div className="flex-1 overflow-auto min-h-0 px-6 py-4">
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'history' && renderHistory()}
         {activeTab === 'bandwidth' && renderBandwidth()}
