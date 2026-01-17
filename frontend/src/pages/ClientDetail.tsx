@@ -43,6 +43,9 @@ export default function ClientDetail() {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const [showTestModal, setShowTestModal] = useState(false);
 
+  // LIVE LATENCY STATE
+  const [lastLatency, setLastLatency] = useState<{ latency: number; timestamp: string } | null>(null);
+
   // WebSocket für Live-Updates
   const { connectionState } = useClientDetailWebSocket(client?.slug, {
     onClientStats: (event) => {
@@ -55,8 +58,16 @@ export default function ClientDetail() {
       }
     },
     onNewMessage: () => fetchMessages(),
-    onMessageStatus: () => {
+    onMessageStatus: (event) => {
       fetchMessages();
+      
+      // Live Latency für Stats-Card
+      if (event.latency_ms) {
+        setLastLatency({
+          latency: event.latency_ms,
+          timestamp: new Date().toISOString(),
+        });
+      }
     },
     onConnectionCreated: () => fetchConnections(),
     onConnectionDeleted: () => fetchConnections(),
@@ -482,7 +493,11 @@ export default function ClientDetail() {
           )}
 
           {/* Stats Cards */}
-          <ClientStats client={client} connectionCount={connections.length} />
+          <ClientStats 
+            client={client} 
+            connectionCount={connections.length} 
+            lastLatency={lastLatency}
+          />
 
           {/* Main Grid */}
           <div className="grid gap-6 lg:grid-cols-3" style={{ alignItems: 'stretch' }}>
