@@ -309,6 +309,8 @@ class SimplexEventBridge:
                     latency = await self._mark_message_sent_by_tracking_id(tracking_id)
                     if latency is not None:
                         logger.info(f"  ✓ Server ACK (tracking: {tracking_id}, latency: {latency}ms)")
+                    # FIXED: Always push status update for 'sent'
+                    await self._push_message_status_event(tracking_id, 'sent', latency)
                 continue
             
             # Handle client acknowledgment (sndRcvd/sndRead = recipient received/read)
@@ -325,9 +327,12 @@ class SimplexEventBridge:
             else:
                 latency = await self._mark_message_delivered_by_sender(client['slug'], text)
             
-            # Push status update to browser
-            if latency is not None:
-                await self._push_message_status_event(tracking_id, 'delivered', latency)
+            # FIXED: Always push status update to browser (even if latency is None)
+            # The frontend needs to know the message was delivered!
+            await self._push_message_status_event(tracking_id, 'delivered', latency)
+            
+            # Also push stats update for the sender
+            await self._push_stats_update(client['slug'])
     
     # =========================================================================
     # Tracking ID Extraction
