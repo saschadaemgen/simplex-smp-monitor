@@ -2,7 +2,7 @@
 
 > **Internal technical documentation for developers**  
 > Contains implementation details, architecture decisions, and troubleshooting guides.  
-> Last Updated: January 15, 2026
+> Last Updated: January 17, 2026
 
 ---
 
@@ -11,7 +11,7 @@
 1. [Project Structure](#1-project-structure)
 2. [Docker Architecture](#2-docker-architecture)
 3. [Network Configuration](#3-network-configuration)
-4. [WebSocket Communication](#4-websocket-communication)
+4. [WebSocket & Real-Time Communication](#4-websocket--real-time-communication)
 5. [ChutneX Private Tor Network](#5-chutnex-private-tor-network)
 6. [ChutneX Analytics Frontend](#6-chutnex-analytics-frontend)
 7. [Environment Detection](#7-environment-detection)
@@ -60,6 +60,7 @@ docker/images/
 docs/
 ├── CHUTNEX.md              # ChutneX Technical Documentation
 ├── CHUTNEX_ANALYTICS.md    # Analytics Frontend Development Guide
+├── REDIS.md                # Redis & Real-Time Guide (NEW)
 └── DEVNOTES.md             # This file - Developer Notes
 ```
 
@@ -86,6 +87,12 @@ frontend/src/
 │   │   └── Layout.tsx        # Main layout with navigation
 │   └── navigation/
 │       └── ChutneXMegaMenu.tsx  # 120-feature navigation
+├── hooks/                    # React Hooks
+│   ├── useClientData.ts      # Combined Client Hook (REST + WS + Batching)
+│   ├── useApi.ts             # Generic REST API hook
+│   ├── useWebSocket.ts       # Base WebSocket hook
+│   ├── useChutney.ts         # Tor Network REST hook
+│   └── useTorWebSocket.ts    # Tor Analytics WebSocket hook
 ├── pages/
 │   ├── chutney/              # ChutneX Analytics Pages
 │   │   ├── analytics/        # Analytics section (3 pages)
@@ -163,7 +170,7 @@ docker compose build app --no-cache
 | **Frontend** | Tailwind CSS | 3.x |
 | **Frontend** | Recharts | 2.x |
 | **Database** | PostgreSQL | 15.x |
-| **Cache** | Redis | 7.x |
+| **Cache/Broker** | Redis | 7.x |
 | **Container** | Docker | 24.x |
 
 ---
@@ -217,34 +224,57 @@ if connection_mode == 'chutnex_internal':
 
 ---
 
-## 4. WebSocket Communication
+## 4. WebSocket & Real-Time Communication
 
-### 4.1 Architecture
+> **📚 Complete Documentation:** See `docs/REDIS.md`
+> 
+> The REDIS.md guide contains comprehensive documentation for:
+> - Redis Channel Layer configuration and debugging
+> - Django Channels consumers (implementation details)
+> - Event Bridge (container listener)
+> - Frontend hooks with 50ms batching
+> - Step-by-step guide for adding new events
+> - Performance best practices
+> - Complete event reference
+
+### 4.1 Architecture Overview
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    DJANGO APP                               │
+│                    REAL-TIME DATA FLOW                      │
+├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│   SimplexCommandService                                     │
-│   └── websocket_url property                                │
-│       ├── Development: ws://localhost:{port}                │
-│       └── Docker:      ws://simplex-client-{slug}:{port}    │
-│                                                             │
-│   SimplexEventBridge (Auto-start)                           │
-│   └── Connects to ALL running client containers             │
-│   └── Processes: newChatItems, chatItemsStatusesUpdated     │
-│   └── Broadcasts to browsers via Redis Channel Layer        │
+│   SimpleX Container  ──WebSocket──►  Event Bridge           │
+│        (Docker)                        (Python)             │
+│                                           │                 │
+│                                           │ group_send()    │
+│                                           ▼                 │
+│                                        Redis                │
+│                                      (Pub/Sub)              │
+│                                           │                 │
+│                                           │ Channel Layer   │
+│                                           ▼                 │
+│                                    Django Consumer          │
+│                                     (Channels)              │
+│                                           │                 │
+│                                           │ WebSocket       │
+│                                           ▼                 │
+│                                     React Browser           │
+│                                    (useClientData)          │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
-         │                              │
-         │ WebSocket                    │ Redis Pub/Sub
-         ▼                              ▼
-┌─────────────────┐          ┌─────────────────────┐
-│ SimpleX Clients │          │ Browser WebSockets  │
-│ :3031, :3032... │          │ /ws/clients/        │
-└─────────────────┘          └─────────────────────┘
 ```
 
-### 4.2 WebSocket URL Detection
+### 4.2 Key Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Event Bridge | `clients/services/event_bridge.py` | Listens to containers, pushes to Redis |
+| Consumer | `clients/consumers.py` | WebSocket handler for browsers |
+| Routing | `clients/routing.py` | WebSocket URL patterns |
+| Hook | `frontend/src/hooks/useClientData.ts` | Combined REST + WS + Batching |
+
+### 4.3 WebSocket URL Detection
 
 **File:** `clients/models.py`
 ```python
@@ -260,6 +290,49 @@ def websocket_url(self):
 **Environment variable:** `RUNNING_IN_DOCKER=true` is set in:
 - `docker-compose.yml` (line 39)
 - `docker-compose.prod.yml` (line 71)
+
+### 4.4 Performance: Direct State Updates
+
+**Old approach (slow):**
+```typescript
+// WebSocket event triggers database refetch
+onNewMessage: () => fetchMessages()  // ❌ 100 DB queries/sec!
+```
+
+**New approach (fast):**
+```typescript
+// WebSocket event updates state directly
+onNewMessage: (event) => {
+  setMessages(prev => [event, ...prev]);  // ✅ No DB query!
+}
+```
+
+### 4.5 Performance: 50ms Batching
+
+At high message rates (100+ msg/s), individual state updates cause UI freezes.
+Solution: Collect events for 50ms, then apply in single render.
+
+```
+WITHOUT BATCHING:  100 messages = 100 renders/sec = frozen UI
+WITH BATCHING:     100 messages =  20 renders/sec = smooth UI
+```
+
+See `docs/REDIS.md` Section 7 for implementation details.
+
+### 4.6 Hook Hierarchy
+
+```
+useClientData.ts     ← Client Detail Page (REST + WS + Batching)
+├── Initial REST fetch
+├── WebSocket connection
+├── 50ms batching
+└── All actions (send, connect, delete)
+
+useApi.ts            ← Generic REST (other pages)
+useWebSocket.ts      ← ClientsPage list view
+useChutney.ts        ← Tor Network REST
+useTorWebSocket.ts   ← Tor Analytics WebSocket
+```
 
 ---
 
@@ -590,6 +663,22 @@ sed -i 'Nd' frontend/src/App.tsx
 
 **Solution:** This is a known Recharts issue. The warning is non-blocking and doesn't affect functionality. Can be safely ignored.
 
+### 8.9 Redis Connection Issues
+
+**Symptom:** Events not reaching browser
+
+**Solution:**
+```bash
+# Check Redis is running
+docker exec simplex-monitor-redis redis-cli PING
+# Expected: PONG
+
+# Monitor Redis traffic
+docker exec -it simplex-monitor-redis redis-cli MONITOR
+```
+
+See `docs/REDIS.md` Section 9 for complete troubleshooting guide.
+
 ---
 
 ## 9. Verification Tests
@@ -685,6 +774,28 @@ npx tsc --noEmit
 ---
 
 ## 10. Implementation Changelog
+
+### 2026-01-17: Redis Documentation & WebSocket Optimization
+
+**New Documentation:**
+- `docs/REDIS.md` created - comprehensive Redis & Real-Time guide
+- Covers: Redis Channel Layer, Django Channels, Event Bridge, React hooks, batching
+
+**Architecture Improvements:**
+- Replaced polling-based updates with direct state updates
+- Added 50ms batching for high-frequency WebSocket events
+- Created unified `useClientData` hook (REST + WS + Batching + Actions)
+
+**Performance Impact:**
+- Before: 100 DB queries/second at 100 msg/s
+- After: 0 DB queries, 20 renders/second
+- Result: Smooth UI even under high load
+
+**Files Changed:**
+- `frontend/src/hooks/useClientData.ts` (NEW)
+- `frontend/src/pages/ClientDetail.tsx` (simplified)
+- `docs/DEVNOTES.md` (Section 4 expanded)
+- `docs/REDIS.md` (NEW)
 
 ### 2026-01-15: TypeScript Fixes & Strategy Change
 
@@ -1032,6 +1143,9 @@ docker compose exec app bash
 
 # Django shell
 docker compose exec app python manage.py shell
+
+# Redis monitoring
+docker exec -it simplex-monitor-redis redis-cli MONITOR
 ```
 
 ### 12.3 Frontend Development
@@ -1074,7 +1188,7 @@ git commit -m "feat(analytics): add ForensicsOverviewPage with timing charts"
 git commit -m "fix(circuits): resolve TypeScript errors in CircuitsListPage"
 
 # Docs commit
-git commit -m "docs: update CHUTNEX_ANALYTICS.md with new pages"
+git commit -m "docs: add REDIS.md real-time architecture guide"
 
 # Style commit
 git commit -m "style(components): apply Neon Blue theme to all cards"
@@ -1082,8 +1196,8 @@ git commit -m "style(components): apply Neon Blue theme to all cards"
 
 ---
 
-*Document Version: 1.1*  
-*Last Updated: January 15, 2026*  
+*Document Version: 1.2*  
+*Last Updated: January 17, 2026*  
 *Author: cannatoshi*
 
 **🔬 SimpleX SMP Monitor - Developer Documentation**
