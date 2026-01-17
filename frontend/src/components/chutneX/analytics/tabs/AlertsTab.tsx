@@ -12,20 +12,15 @@
 import React, { useState, useMemo } from 'react';
 import {
   AlertTriangle,
-  AlertCircle,
   Info,
   CheckCircle2,
   XCircle,
-  Clock,
   Filter,
   Bell,
   BellOff,
   Eye,
   EyeOff,
   Trash2,
-  RefreshCw,
-  TrendingUp,
-  Activity,
 } from 'lucide-react';
 
 const NEON = '#88CED0';

@@ -14,11 +14,9 @@ import {
   Building2,
   Shield,
   CheckCircle2,
-  XCircle,
   AlertCircle,
   Clock,
   Wifi,
-  WifiOff,
   Vote,
   Key,
   Globe,
@@ -62,7 +60,7 @@ interface AuthoritiesTabProps {
 export const AuthoritiesTab: React.FC<AuthoritiesTabProps> = ({
   authorities,
   requiredVotes,
-  isLive,
+  // isLive, // TODO: use later
 }) => {
   // Calculate stats
   const stats = useMemo(() => {

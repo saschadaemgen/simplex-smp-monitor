@@ -23,8 +23,6 @@ import {
   WifiOff,
   Zap,
   FolderOpen,
-  Globe,
-  FlaskConical,
   Container,
   Activity,
   EyeOff,

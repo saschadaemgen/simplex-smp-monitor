@@ -36,7 +36,7 @@ import {
   useAnalytics, 
   type BandwidthData, 
   type CircuitData, 
-  type TorEvent,
+  // type TorEvent,
 } from '../../../hooks/useTorWebSocket';
 
 // Components

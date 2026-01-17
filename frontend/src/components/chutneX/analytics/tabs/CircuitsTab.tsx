@@ -106,7 +106,7 @@ const getPathStrings = (path: Array<{ fingerprint: string; nickname: string }> |
 };
 
 // Helper to get path fingerprints
-const getPathFingerprints = (path: Array<{ fingerprint: string; nickname: string }> | undefined): string[] => {
+const _getPathFingerprints = (path: Array<{ fingerprint: string; nickname: string }> | undefined): string[] => {
   if (!path) return [];
   return path.map(p => p.fingerprint);
 };
@@ -129,7 +129,7 @@ const formatTime = (timestamp?: string): string => {
   });
 };
 
-const formatDateTime = (timestamp?: string): string => {
+const _formatDateTime = (timestamp?: string): string => {
   if (!timestamp) return '-';
   return new Date(timestamp).toLocaleString('de-DE', {
     day: '2-digit',

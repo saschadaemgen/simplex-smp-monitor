@@ -189,7 +189,7 @@ export function useClientData(clientId: string | undefined): UseClientDataReturn
   
   const pendingReceived = useRef<LiveMessage[]>([]);
   const pendingSent = useRef<LiveMessage[]>([]);
-  const pendingStatusUpdates = useRef<Map<string, { status: string; latency_ms?: number }>>(new Map());
+  // const pendingStatusUpdates = useRef<Map<string, { status: string; latency_ms?: number }>>(new Map());
   const batchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Track local ID <-> server tracking_id mapping (BIDIRECTIONAL)

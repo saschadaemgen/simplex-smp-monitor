@@ -21,15 +21,12 @@ import {
   Square,
   Container,
   Network,
-  Activity,
   BarChart3,
   Shield,
-  Users,
   Radio,
   Video,
   CheckCircle,
   XCircle,
-  Clock,
 } from 'lucide-react';
 import { useTorNetworks } from '../hooks/useChutney';
 import { 
