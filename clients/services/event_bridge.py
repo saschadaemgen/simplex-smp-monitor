@@ -144,7 +144,7 @@ class SimplexEventBridge:
         
         slug = client['slug']
         port = client['websocket_port']
-        ws_url = f"ws://simplex-client-{slug}:{port}"
+        ws_url = client.get('websocket_url', f'ws://localhost:{port}')
         
         while self.running:
             try:
@@ -356,10 +356,17 @@ class SimplexEventBridge:
     def _get_running_clients(self) -> list:
         """Fetch all running clients from database"""
         from clients.models import SimplexClient
-        return list(
-            SimplexClient.objects.filter(status=SimplexClient.Status.RUNNING)
-            .values('id', 'slug', 'name', 'websocket_port')
-        )
+        clients = SimplexClient.objects.filter(status=SimplexClient.Status.RUNNING)
+        return [
+            {
+                'id': str(c.id),
+                'slug': c.slug,
+                'name': c.name,
+                'websocket_port': c.websocket_port,
+                'websocket_url': c.websocket_url,
+            }
+            for c in clients
+        ]
     
     @sync_to_async
     def _increment_received(self, slug: str):
