@@ -80,3 +80,6 @@ static/dist/
 
 # Dependabot exports (local only)
 dependabot-alerts*.json
+
+# Dependabot exports (local only)
+dependabot-alerts*.json
