@@ -1,5 +1,5 @@
 # Django Core
-Django>=6.0,<7.0
+Django>=6.0.4,<7.0
 djangorestframework
 django-cors-headers
 django-htmx
@@ -15,16 +15,16 @@ redis
 # Background Tasks
 APScheduler
 
-# Docker Integration  
-docker
+# Docker Integration
+docker>=7.0.0
 
 # Database/Metrics
 influxdb
 influxdb-client
 
 # Utils
-python-dotenv
-requests
+python-dotenv>=1.2.2
+requests>=2.33.0
 psutil
 aiofiles
 websockets
@@ -32,7 +32,15 @@ websockets
 # Tor/SOCKS Support
 PySocks
 
+# === Security Pins (transitive deps with known CVEs) ===
+cryptography>=46.0.7
+pyOpenSSL>=26.0.0
+ujson>=5.12.0
+pyasn1>=0.6.3
+cbor2>=5.9.0
+
 # === MUSIC PLAYER ===
-# YouTube Audio Extraction (from cannatoshi fork)
-git+https://github.com/cannatoshi/yt-dlp.git
-docker>=7.0.0
+# YouTube Audio Extraction
+# Was: git+https://github.com/cannatoshi/yt-dlp.git
+# Switched to upstream to fix CVE-2026-26331 (--netrc-cmd command injection, CVSS 8.8)
+yt-dlp>=2026.02.21
