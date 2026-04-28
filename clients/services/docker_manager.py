@@ -361,8 +361,9 @@ class DockerManager:
             
         except docker.errors.NotFound:
             return "[Container nicht gefunden]"
-        except Exception as e:
-            return f"[Fehler: {e}]"
+        except Exception:
+            logger.exception("Fehler beim Abrufen der Container-Logs")
+            return "[Fehler beim Abrufen der Logs]"
     
     def get_container_status(self, simplex_client) -> Dict[str, Any]:
         """
