@@ -83,3 +83,4 @@ dependabot-alerts*.json
 
 # Dependabot exports (local only)
 dependabot-alerts*.json
+code-scanning-alerts*.json
