@@ -77,3 +77,9 @@ yarn-error.log*
 .npm/
 .yarn/
 static/dist/
+
+# Dependabot exports (local only)
+dependabot-alerts*.json
+
+# Dependabot exports (local only)
+dependabot-alerts*.json
